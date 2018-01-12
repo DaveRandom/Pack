@@ -1,0 +1,19 @@
+{
+  "name": "daverandom/pack",
+  "description": "Data packing and unpacking API",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Chris Wright",
+      "email": "cw@daverandom.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": { "DaveRandom\\Pack\\": "src/" },
+    "files": ["src/functions.php"]
+  },
+  "require": {
+    "php": ">=7.0",
+    "daverandom/enum": "^1"
+  }
+}
