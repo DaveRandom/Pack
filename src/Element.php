@@ -6,15 +6,5 @@ interface Element
 {
     const REPEAT = -1;
 
-    function getName(): string;
-
-    function isBuiltIn(): bool;
-
-    function getPackFormat(): string;
-
-    function getUnpackFormat(): string;
-
-    function getPackCode(): string;
-
-    function getUnpackCode(): string;
+    function generatePackCode(PackCompilationContext $context, int $count);
 }
