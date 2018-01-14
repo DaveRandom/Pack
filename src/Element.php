@@ -4,7 +4,5 @@ namespace DaveRandom\Pack;
 
 interface Element
 {
-    const REPEAT = -1;
-
-    function generatePackCode(PackCompilationContext $context, int $count);
+    function generatePackCode(PackCompilationContext $context, int $count = null);
 }

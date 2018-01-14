@@ -2,44 +2,45 @@
 
 namespace DaveRandom\Pack;
 
-abstract class Integer implements Element
+abstract class IntegerType implements Element
 {
-    const SIGNED = 0b01;
+    const UNSIGNED = 0b01;
     const LITTLE_ENDIAN = 0b10;
 
     private $width;
     private $specifier;
     private $builtIn = true;
 
-    public function generatePackCode(PackCompilationContext $ctx, int $count)
+    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
     {
         if ($this->builtIn) {
             $ctx->appendSpecifier($this->specifier, $count);
             return;
         }
 
-        if ($count === 1) {
-            $ctx->appendCode("\$result {$ctx->getAssignmentOperator()} \strrev(\pack('{$this->specifier}', \$args[{$ctx->consumeArg()}]));");
+        $arg = $ctx->getCurrentArg();
+
+        if ($count === null) {
+            $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$arg}))");
             return;
         }
 
-        if ($count === Element::REPEAT) {
-            $ctx->appendCode("\$result {$ctx->getAssignmentOperator()} \implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...\array_slice(\$args, {$ctx->consumeArg()})))));");
-            return;
-        }
-
-        $this->specifier .= $count;
         $size = $this->width / 8;
+
+        if ($count === UNBOUNDED) {
+            $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...{$arg}), {$size})))");
+            return;
+        }
 
         $args = [];
 
         for ($i = 0; $i < $count; $i++) {
-            $args[] = "\$args[{$ctx->consumeArg()}]";
+            $args[] = "{$arg}[{$i}]";;
         }
 
         $args = \implode(', ', $args);
 
-        $ctx->appendCode("\$result {$ctx->getAssignmentOperator()} \implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}', {$args}), {$size})));");
+        $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$args}), {$size})))");
     }
 
     /*
@@ -78,11 +79,11 @@ abstract class Integer implements Element
             throw new \InvalidArgumentException("Invalid integer size: {$width}");
         }
 
-        $isSigned = (bool)($flags & self::SIGNED);
+        $isUnsigned = (bool)($flags & self::UNSIGNED);
         $isLittleEndian = (bool)($flags & self::LITTLE_ENDIAN);
 
         // Unsigned integers can all use built-in formats
-        if (!$isSigned) {
+        if ($isUnsigned) {
             $this->specifier = ($isLittleEndian && $width !== 8 ? UINT_LE_BY_SIZE : UINT_BY_SIZE)[$width];
             return;
         }

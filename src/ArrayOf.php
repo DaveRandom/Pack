@@ -1,27 +1,69 @@
 <?php declare(strict_types=1);
-/**
- * Created by PhpStorm.
- * User: chris.wright
- * Date: 13/01/2018
- * Time: 01:04
- */
 
 namespace DaveRandom\Pack;
 
 
-final class ArrayOf implements Element
+final class ArrayOf implements Vector
 {
     private $element;
     private $bounds;
 
-    public function __construct(Element $element, int $bounds)
+    public function __construct(Element $element, int $bounds = UNBOUNDED)
     {
+        if ($bounds < 1 && $bounds !== UNBOUNDED) {
+            throw new \InvalidArgumentException('Bounds of array must be positive integer or unbounded');
+        }
+
+        if ($element instanceof Vector && !$element->isFinite() && $bounds !== 1) {
+            throw new \InvalidArgumentException('Unbounded array must be the last element of the top level structure');
+        }
+
         $this->element = $element;
         $this->bounds = $bounds;
     }
 
-    public function generatePackCode(PackCompilationContext $ctx, int $count)
+    private function generateUnboundedArrayPackCode(PackCompilationContext $ctx)
     {
-        $this->element->generatePackCode($ctx, $count * $this->bounds);
+        $ctx->appendResult();
+
+        $ctx->beginIterateCurrentArg();
+        $this->element->generatePackCode($ctx, $this->bounds);
+        $ctx->endIterateCurrentArg();
+    }
+
+    private function generateArrayPackCode(PackCompilationContext $ctx, int $count)
+    {
+        if ($count === UNBOUNDED) {
+            $this->generateUnboundedArrayPackCode($ctx);
+            return;
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            $ctx->pushArgDimension($i);
+
+            $this->element->generatePackCode($ctx, $this->bounds);
+
+            $ctx->popArgDimension();
+        }
+    }
+
+    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
+    {
+        if ($count !== null) {
+            $this->generateArrayPackCode($ctx, $count);
+            return;
+        }
+
+        $this->element->generatePackCode($ctx, $this->bounds);
+    }
+
+    public function count(): int
+    {
+        return $this->bounds;
+    }
+
+    public function isFinite(): bool
+    {
+        return $this->bounds !== UNBOUNDED;
     }
 }

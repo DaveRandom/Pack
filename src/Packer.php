@@ -5,5 +5,5 @@ namespace DaveRandom\Pack;
 interface Packer
 {
     function pack(array $args): string;
-    function getDefinition(): Element;
+    function getDefinition(): Vector;
 }

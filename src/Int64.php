@@ -2,10 +2,10 @@
 
 namespace DaveRandom\Pack;
 
-final class Int64 extends Integer
+final class Int64 extends IntegerType
 {
     public function __construct(int $flags = 0)
     {
-        parent::__construct(64, $flags | parent::SIGNED);
+        parent::__construct(64, $flags);
     }
 }

@@ -4,69 +4,125 @@ namespace DaveRandom\Pack;
 
 final class PackCompilationContext
 {
-    private $argIndex = 0;
-    private $consumeToEnd = false;
-    private $specifiers = [];
-    private $specifierArgCount = 0;
+    const ARGS_VAR_NAME = '‽args‽';
+    const RESULT_VAR_NAME = '‽result‽';
+
+    private $currentArgPath = [];
+    private $pendingSpecifiers = [];
     private $codeLines = [];
     private $haveResult = false;
 
-    private function processEndOfSpecifiers()
+    private function compilePendingSpecifiers()
     {
-        $specifiers = \var_export(\implode('', $this->specifiers), true);
-
-        $packArgIndexes = [];
-        for ($i = 0; $i < $this->specifierArgCount; $i++) {
-            $packArgIndexes[] = $this->argIndex++;
-        }
-        $args = '$args[' . \implode('], $args[', $packArgIndexes) . ']';
-
-        $this->specifiers = [];
-        $this->specifierArgCount = 0;
-
-        $this->codeLines[] = "\$result {$this->getAssignmentOperator()} \pack({$specifiers}, {$args});";
-    }
-
-    public function appendSpecifier(string $specifier, int $argCount)
-    {
-        $this->specifiers[] = $specifier . ([1 => '', Element::REPEAT => '*'][$argCount] ?? $argCount);
-
-        if ($argCount === Element::REPEAT) {
-            $this->consumeToEnd = true;
-        } else {
-            $this->specifierArgCount += $argCount;
-        }
-    }
-
-    public function appendCode($lines)
-    {
-        \array_push($this->codeLines, ...((array)$lines));
-    }
-
-    public function consumeArg(): int
-    {
-        return $this->argIndex++;
-    }
-
-    public function getAssignmentOperator(): string
-    {
-        if (!empty($this->specifiers)) {
-            $this->processEndOfSpecifiers();
+        if (empty($this->pendingSpecifiers)) {
+            return;
         }
 
-        if ($this->haveResult) {
-            return '.=';
+        $specifiers = [];
+        $args = [];
+
+        foreach ($this->pendingSpecifiers as [$specifier, $arg, $count]) {
+            if ($count === null) { // scalar
+                $specifiers[] = $specifier . $count;
+                $args[] = $arg;
+                continue;
+            }
+
+            if ($count === UNBOUNDED) { // array of unknown length
+                $specifiers[] = $specifier . '*';
+                $args[] = "...{$arg}";
+                continue;
+            }
+
+            // bounded array
+            $specifiers[] = $specifier . $count;
+
+            for ($i = 0; $i < $count; $i++) {
+                $args[] = "{$arg}[{$i}]";
+            }
         }
 
+        $this->pendingSpecifiers = [];
+
+        $this->appendResult("\pack(" . \var_export(\implode('', $specifiers), true) . ", " . \implode(', ', $args) . ")");
+    }
+
+    public function appendSpecifier(string $specifier, int $count = null)
+    {
+        $this->pendingSpecifiers[] = [$specifier, $this->getCurrentArg(), $count];
+    }
+
+    public function appendCode(string ...$lines)
+    {
+        $this->compilePendingSpecifiers();
+
+        \array_push($this->codeLines, ...$lines);
+    }
+
+    public function appendResult(string $expr = null)
+    {
+        $this->compilePendingSpecifiers();
+
+        $hadResult = $this->haveResult;
+        $operator = $this->haveResult ? '.=' : '=';
         $this->haveResult = true;
-        return '=';
+
+        if ($expr !== null) {
+            $this->codeLines[] = '$' . self::RESULT_VAR_NAME . ' ' . $operator . ' ' . $expr . ';';
+        } else if (!$hadResult) {
+            $this->codeLines[] = '$' . self::RESULT_VAR_NAME . ' ' . $operator . ' "";';
+        }
+    }
+
+    public function getCurrentArg(): string
+    {
+        return !empty($this->currentArgPath)
+            ? '$' . self::ARGS_VAR_NAME . '[' . \implode('][', $this->currentArgPath) . ']'
+            : '$' . self::ARGS_VAR_NAME;
+    }
+
+    private $iterationDepth = 0;
+
+    public function beginIterateCurrentArg()
+    {
+        $this->compilePendingSpecifiers();
+
+        $arg = $this->getCurrentArg();
+
+        $iterationVar = "\$‽" . ++$this->iterationDepth . "‽";
+        $this->currentArgPath[] = $iterationVar;
+
+        $this->codeLines[] = "foreach ({$arg} as {$iterationVar} => \$‽trash‽) {";
+    }
+
+    public function endIterateCurrentArg()
+    {
+        $this->compilePendingSpecifiers();
+
+        $this->codeLines[] = '}';
+
+        \array_pop($this->currentArgPath);
+        $this->iterationDepth--;
+    }
+
+    public function pushArgDimensionVar(string $varName)
+    {
+        $this->currentArgPath[] = "\${$varName}";
+    }
+
+    public function pushArgDimension($key)
+    {
+        $this->currentArgPath[] = \var_export($key, true);
+    }
+
+    public function popArgDimension()
+    {
+        \array_pop($this->currentArgPath);
     }
 
     public function getCodeLines(): array
     {
-        if (!empty($this->specifiers)) {
-            $this->processEndOfSpecifiers();
-        }
+        $this->compilePendingSpecifiers();
 
         return $this->codeLines;
     }

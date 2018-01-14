@@ -14,23 +14,23 @@ return new class($element) implements \\' . Packer::class . '
         $this->definition = $definition;
     }
 
-    public function getDefinition(): \\' . Element::class . '
+    public function getDefinition(): \\' . Vector::class . '
     {
         return $this->definition;
     }
 
-    public function pack(array $args): string
+    public function pack(array $' . PackCompilationContext::ARGS_VAR_NAME . '): string
     {
         %s
-        return $result;
+        return $' . PackCompilationContext::RESULT_VAR_NAME . ';
     }
 };
 ';
 
-    public function compilePacker(Element $element): Packer
+    public function compilePacker(Vector $element): Packer
     {
         $ctx = new PackCompilationContext();
-        $element->generatePackCode($ctx, 1);
+        $element->generatePackCode($ctx);
 
         $code = '';
 

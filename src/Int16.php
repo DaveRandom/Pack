@@ -2,10 +2,10 @@
 
 namespace DaveRandom\Pack;
 
-final class Int16 extends Integer
+final class Int16 extends IntegerType
 {
     public function __construct(int $flags = 0)
     {
-        parent::__construct(16, $flags | parent::SIGNED);
+        parent::__construct(16, $flags);
     }
 }

@@ -3,6 +3,7 @@
 namespace DaveRandom\Pack;
 
 const HAVE_FLOAT_ORDER = (\PHP_VERSION_ID > 70015 && \PHP_VERSION_ID < 70100) || \PHP_VERSION_ID > 70101;
+const UNBOUNDED = -1;
 
 \define(__NAMESPACE__ . '\\SYSTEM_LITTLE_ENDIAN', \pack('S', 1) === "\x01\x00");
 
