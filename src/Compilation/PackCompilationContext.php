@@ -64,9 +64,9 @@ final class PackCompilationContext
         $this->blocks->push($this->currentBlock = new Block());
     }
 
-    public function appendSpecifier(string $specifier, int $count = null)
+    public function appendSpecifier(string $specifier, int $count = null, string $arg = null)
     {
-        $this->pendingPackSpecifiers->enqueue([$specifier, $this->getCurrentArg(), $count]);
+        $this->pendingPackSpecifiers->enqueue([$specifier, $arg ?? $this->getCurrentArg(), $count]);
     }
 
     public function appendCode(string ...$statements)

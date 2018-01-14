@@ -6,6 +6,7 @@ use DaveRandom\Pack\Compilation\Compiler;
 use DaveRandom\Pack\Types\ArrayOf;
 use DaveRandom\Pack\Types\Int16;
 use DaveRandom\Pack\Types\Int32;
+use DaveRandom\Pack\Types\IntegerType;
 use DaveRandom\Pack\Types\Reference;
 use DaveRandom\Pack\Types\Struct;
 use DaveRandom\Pack\Types\UInt16;
@@ -20,7 +21,7 @@ $struct = new Struct([
         new Struct([
             'array'  => new ArrayOf(new UInt8, 7),
             'field1' => new UInt32,
-            'field2' => new Int32(Int32::LITTLE_ENDIAN),
+            'field2' => new Int32(IntegerType::LITTLE_ENDIAN),
             'field3' => new Int32,
             'substruct' => new Struct([
                 'u161' => new UInt16(),

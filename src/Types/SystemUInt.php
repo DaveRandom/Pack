@@ -4,7 +4,7 @@ namespace DaveRandom\Pack\Types;
 
 use const DaveRandom\Pack\INT_WIDTH;
 
-final class UIntSystem extends IntegerType
+final class SystemUInt extends IntegerType
 {
     public function __construct(int $flags = 0)
     {
