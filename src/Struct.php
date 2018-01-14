@@ -66,9 +66,7 @@ final class Struct implements Vector
 
             foreach ($this->elements as $key => $element) {
                 $ctx->pushArgDimension($key);
-
                 $element->generatePackCode($ctx);
-
                 $ctx->popArgDimension();
             }
 

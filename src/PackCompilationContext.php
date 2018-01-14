@@ -7,6 +7,7 @@ final class PackCompilationContext
     const ARGS_VAR_NAME = '‽args‽';
     const RESULT_VAR_NAME = '‽result‽';
 
+    private $iterationDepth = 0;
     private $currentArgPath = [];
     private $pendingSpecifiers = [];
     private $codeLines = [];
@@ -81,8 +82,6 @@ final class PackCompilationContext
             : '$' . self::ARGS_VAR_NAME;
     }
 
-    private $iterationDepth = 0;
-
     public function beginIterateCurrentArg()
     {
         $this->compilePendingSpecifiers();
@@ -103,11 +102,6 @@ final class PackCompilationContext
 
         \array_pop($this->currentArgPath);
         $this->iterationDepth--;
-    }
-
-    public function pushArgDimensionVar(string $varName)
-    {
-        $this->currentArgPath[] = "\${$varName}";
     }
 
     public function pushArgDimension($key)

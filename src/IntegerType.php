@@ -75,8 +75,8 @@ abstract class IntegerType implements Element
 
     public function __construct(int $width, int $flags = 0)
     {
-        if (!\array_key_exists($width, INT_BY_SIZE)) {
-            throw new \InvalidArgumentException("Invalid integer size: {$width}");
+        if (!\array_key_exists($width, INT_BY_WIDTH)) {
+            throw new \InvalidArgumentException("Invalid integer width: {$width}");
         }
 
         $isUnsigned = (bool)($flags & self::UNSIGNED);
@@ -84,11 +84,11 @@ abstract class IntegerType implements Element
 
         // Unsigned integers can all use built-in formats
         if ($isUnsigned) {
-            $this->specifier = ($isLittleEndian && $width !== 8 ? UINT_LE_BY_SIZE : UINT_BY_SIZE)[$width];
+            $this->specifier = ($isLittleEndian && $width !== 8 ? UINT_LE_BY_WIDTH : UINT_BY_WIDTH)[$width];
             return;
         }
 
-        $this->specifier = INT_BY_SIZE[$width];
+        $this->specifier = INT_BY_WIDTH[$width];
 
         // Signed char and signed integers where the endianness matches the system can use built-in formats
         if ($width === 8 || $isLittleEndian === SYSTEM_LITTLE_ENDIAN) {
