@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack;
+namespace DaveRandom\Pack\Types;
+
+use const DaveRandom\Pack\INT_WIDTH;
 
 final class IntSystem extends IntegerType
 {

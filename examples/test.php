@@ -2,6 +2,16 @@
 
 namespace DaveRandom\Pack;
 
+use DaveRandom\Pack\Compilation\Compiler;
+use DaveRandom\Pack\Types\ArrayOf;
+use DaveRandom\Pack\Types\Int16;
+use DaveRandom\Pack\Types\Int32;
+use DaveRandom\Pack\Types\Reference;
+use DaveRandom\Pack\Types\Struct;
+use DaveRandom\Pack\Types\UInt16;
+use DaveRandom\Pack\Types\UInt32;
+use DaveRandom\Pack\Types\UInt8;
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $struct = new Struct([

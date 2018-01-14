@@ -1,6 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack;
+namespace DaveRandom\Pack\Compilation;
+
+use DaveRandom\Pack\Packer;
+use DaveRandom\Pack\Types\Vector;
 
 final class Compiler
 {
@@ -32,13 +35,7 @@ return new class($element) implements \\' . Packer::class . '
         $ctx = new PackCompilationContext();
         $element->generatePackCode($ctx);
 
-        $code = '';
-
-        foreach ($ctx->getCodeLines() as $line) {
-            $code .= "\n" . \rtrim("        {$line}");
-        }
-
-        \printf(self::PACKER_TEMPLATE, \ltrim($code));
-        return eval(\sprintf(self::PACKER_TEMPLATE, \ltrim($code)));
+        \printf(self::PACKER_TEMPLATE, \trim($ctx->getCode(8, 4)));
+        return eval(\sprintf(self::PACKER_TEMPLATE, \ltrim($ctx->getCode(8, 4))));
     }
 }

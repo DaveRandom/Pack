@@ -1,6 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack;
+namespace DaveRandom\Pack\Types;
+
+use DaveRandom\Pack\Compilation\PackCompilationContext;
+use const DaveRandom\Pack\INT_CODES_BY_WIDTH;
+use const DaveRandom\Pack\SYSTEM_LITTLE_ENDIAN;
+use const DaveRandom\Pack\UINT_CODES_BY_WIDTH;
+use const DaveRandom\Pack\UINT_LE_CODES_BY_WIDTH;
+use const DaveRandom\Pack\UNBOUNDED;
 
 abstract class IntegerType implements Type
 {
@@ -75,7 +82,7 @@ abstract class IntegerType implements Type
 
     public function __construct(int $width, int $flags = 0)
     {
-        if (!\array_key_exists($width, INT_BY_WIDTH)) {
+        if (!\array_key_exists($width, INT_CODES_BY_WIDTH)) {
             throw new \InvalidArgumentException("Invalid integer width: {$width}");
         }
 
@@ -84,11 +91,11 @@ abstract class IntegerType implements Type
 
         // Unsigned integers can all use built-in formats
         if ($isUnsigned) {
-            $this->specifier = ($isLittleEndian && $width !== 8 ? UINT_LE_BY_WIDTH : UINT_BY_WIDTH)[$width];
+            $this->specifier = ($isLittleEndian && $width !== 8 ? UINT_LE_CODES_BY_WIDTH : UINT_CODES_BY_WIDTH)[$width];
             return;
         }
 
-        $this->specifier = INT_BY_WIDTH[$width];
+        $this->specifier = INT_CODES_BY_WIDTH[$width];
 
         // Signed char and signed integers where the endianness matches the system can use built-in formats
         if ($width === 8 || $isLittleEndian === SYSTEM_LITTLE_ENDIAN) {

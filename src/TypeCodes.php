@@ -4,7 +4,7 @@ namespace DaveRandom\Pack;
 
 use DaveRandom\Enum\Enum;
 
-final class Types extends Enum
+final class TypeCodes extends Enum
 {
     const NULL_PADDED_STRING  = 'a';
     const SPACE_PADDED_STRING = 'A';

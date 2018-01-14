@@ -2,6 +2,8 @@
 
 namespace DaveRandom\Pack;
 
+use DaveRandom\Pack\Types\Vector;
+
 interface Packer
 {
     function pack(array $args): string;

@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack;
+namespace DaveRandom\Pack\Compilation;
+
+use const DaveRandom\Pack\UNBOUNDED;
 
 final class PackCompilationContext
 {
@@ -8,28 +10,34 @@ final class PackCompilationContext
     const RESULT_VAR_NAME = '‽result‽';
 
     private $iterationDepth = 0;
-    private $currentArgPath = [];
-    private $pendingSpecifiers = [];
-    private $codeLines = [];
     private $haveResult = false;
+
+    private $currentArgPath = [];
+
+    /** @var \SplQueue */
+    private $pendingPackSpecifiers;
+
+    /** @var \SplStack<Block> */
+    private $blocks;
+
+    /** @var Block */
+    private $currentBlock;
 
     private function compilePendingSpecifiers()
     {
-        if (empty($this->pendingSpecifiers)) {
-            return;
-        }
-
         $specifiers = [];
         $args = [];
 
-        foreach ($this->pendingSpecifiers as [$specifier, $arg, $count]) {
+        while ($this->pendingPackSpecifiers->count() > 0) {
+            list($specifier, $arg, $count) = $this->pendingPackSpecifiers->dequeue();
+
             if ($count === null) { // scalar
                 $specifiers[] = $specifier . $count;
                 $args[] = $arg;
                 continue;
             }
 
-            if ($count === UNBOUNDED) { // array of unknown length
+            if ($count === UNBOUNDED) { // unbounded array
                 $specifiers[] = $specifier . '*';
                 $args[] = "...{$arg}";
                 continue;
@@ -43,36 +51,41 @@ final class PackCompilationContext
             }
         }
 
-        $this->pendingSpecifiers = [];
+        if (!empty($specifiers)) {
+            $this->appendResult("\pack(" . \var_export(\implode('', $specifiers), true) . ", " . \implode(', ', $args) . ")");
+        }
+    }
 
-        $this->appendResult("\pack(" . \var_export(\implode('', $specifiers), true) . ", " . \implode(', ', $args) . ")");
+    public function __construct()
+    {
+        $this->pendingPackSpecifiers = new \SplQueue();
+        $this->blocks = new \SplStack();
+
+        $this->blocks->push($this->currentBlock = new Block());
     }
 
     public function appendSpecifier(string $specifier, int $count = null)
     {
-        $this->pendingSpecifiers[] = [$specifier, $this->getCurrentArg(), $count];
+        $this->pendingPackSpecifiers->enqueue([$specifier, $this->getCurrentArg(), $count]);
     }
 
-    public function appendCode(string ...$lines)
+    public function appendCode(string ...$statements)
     {
         $this->compilePendingSpecifiers();
 
-        \array_push($this->codeLines, ...$lines);
+        foreach ($statements as $statement) {
+            $this->currentBlock->appendStatement(new Statement($statement));
+        }
     }
 
-    public function appendResult(string $expr = null)
+    public function appendResult(string $expr)
     {
         $this->compilePendingSpecifiers();
 
-        $hadResult = $this->haveResult;
         $operator = $this->haveResult ? '.=' : '=';
         $this->haveResult = true;
 
-        if ($expr !== null) {
-            $this->codeLines[] = '$' . self::RESULT_VAR_NAME . ' ' . $operator . ' ' . $expr . ';';
-        } else if (!$hadResult) {
-            $this->codeLines[] = '$' . self::RESULT_VAR_NAME . ' ' . $operator . ' "";';
-        }
+        $this->currentBlock->appendStatement(new Statement('$' . self::RESULT_VAR_NAME . ' ' . $operator . ' ' . $expr . ';'));
     }
 
     public function getCurrentArgPath(): array
@@ -104,19 +117,26 @@ final class PackCompilationContext
     {
         $this->compilePendingSpecifiers();
 
+        if (!$this->haveResult) {
+            $this->currentBlock->appendStatement(new Statement('$' . self::RESULT_VAR_NAME . ' = \'\';'));
+            $this->haveResult = true;
+        }
+
         $arg = $this->getCurrentArg();
 
         $iterationVar = "\$‽" . ++$this->iterationDepth . "‽";
         $this->currentArgPath[] = $iterationVar;
 
-        $this->codeLines[] = "foreach ({$arg} as {$iterationVar} => \$‽trash‽) {";
+        $this->blocks->push($this->currentBlock = new Block("foreach ({$arg} as {$iterationVar} => \$‽trash‽)"));
     }
 
     public function endIterateCurrentArg()
     {
         $this->compilePendingSpecifiers();
 
-        $this->codeLines[] = '}';
+        $innerBlock = $this->blocks->pop();
+        $this->currentBlock = $this->blocks->top();
+        $this->currentBlock->appendBlock($innerBlock);
 
         \array_pop($this->currentArgPath);
         $this->iterationDepth--;
@@ -132,10 +152,10 @@ final class PackCompilationContext
         return \array_pop($this->currentArgPath);
     }
 
-    public function getCodeLines(): array
+    public function getCode(int $indentation, int $increment = 4)
     {
         $this->compilePendingSpecifiers();
 
-        return $this->codeLines;
+        return $this->blocks->bottom()->getCode($indentation, $increment);
     }
 }

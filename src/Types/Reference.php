@@ -1,6 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack;
+namespace DaveRandom\Pack\Types;
+
+use DaveRandom\Pack\Compilation\PackCompilationContext;
+use function DaveRandom\Pack\is_valid_name;
 
 final class Reference implements Type
 {

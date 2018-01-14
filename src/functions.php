@@ -16,54 +16,54 @@ const UNBOUNDED = -1;
 \define(__NAMESPACE__ . '\\DOUBLE_WIDTH', DOUBLE_SIZE * 8);
 
 \define(__NAMESPACE__ . '\\ELEMENT_SIZES', [
-    Types::INT_SYS    => INT_SIZE,
-    Types::UINT_SYS   => INT_SIZE,
+    TypeCodes::INT_SYS    => INT_SIZE,
+    TypeCodes::UINT_SYS   => INT_SIZE,
 
-    Types::INT8       => 1,
-    Types::UINT8      => 1,
+    TypeCodes::INT8       => 1,
+    TypeCodes::UINT8      => 1,
 
-    Types::INT16_SYS  => 2,
-    Types::UINT16     => 2,
-    Types::UINT16_LE  => 2,
-    Types::UINT16_SYS => 2,
+    TypeCodes::INT16_SYS  => 2,
+    TypeCodes::UINT16     => 2,
+    TypeCodes::UINT16_LE  => 2,
+    TypeCodes::UINT16_SYS => 2,
 
-    Types::INT32_SYS  => 4,
-    Types::UINT32     => 4,
-    Types::UINT32_LE  => 4,
-    Types::UINT32_SYS => 4,
+    TypeCodes::INT32_SYS  => 4,
+    TypeCodes::UINT32     => 4,
+    TypeCodes::UINT32_LE  => 4,
+    TypeCodes::UINT32_SYS => 4,
 
-    Types::INT64_SYS  => 8,
-    Types::UINT64     => 8,
-    Types::UINT64_LE  => 8,
-    Types::UINT64_SYS => 8,
+    TypeCodes::INT64_SYS  => 8,
+    TypeCodes::UINT64     => 8,
+    TypeCodes::UINT64_LE  => 8,
+    TypeCodes::UINT64_SYS => 8,
 
-    Types::FLOAT      => FLOAT_SIZE,
-    Types::FLOAT_LE   => FLOAT_SIZE,
-    Types::FLOAT_SYS  => FLOAT_SIZE,
+    TypeCodes::FLOAT      => FLOAT_SIZE,
+    TypeCodes::FLOAT_LE   => FLOAT_SIZE,
+    TypeCodes::FLOAT_SYS  => FLOAT_SIZE,
 
-    Types::DOUBLE     => DOUBLE_SIZE,
-    Types::DOUBLE_LE  => DOUBLE_SIZE,
-    Types::DOUBLE_SYS => DOUBLE_SIZE,
+    TypeCodes::DOUBLE     => DOUBLE_SIZE,
+    TypeCodes::DOUBLE_LE  => DOUBLE_SIZE,
+    TypeCodes::DOUBLE_SYS => DOUBLE_SIZE,
 ]);
 
-const INT_BY_WIDTH = [
-    8  => Types::INT8,
-    16 => Types::INT16_SYS,
-    32 => Types::INT32_SYS,
-    64 => Types::INT64_SYS,
+const INT_CODES_BY_WIDTH = [
+    8  => TypeCodes::INT8,
+    16 => TypeCodes::INT16_SYS,
+    32 => TypeCodes::INT32_SYS,
+    64 => TypeCodes::INT64_SYS,
 ];
 
-const UINT_BY_WIDTH = [
-    8  => Types::UINT8,
-    16 => Types::UINT16,
-    32 => Types::UINT32,
-    64 => Types::UINT64,
+const UINT_CODES_BY_WIDTH = [
+    8  => TypeCodes::UINT8,
+    16 => TypeCodes::UINT16,
+    32 => TypeCodes::UINT32,
+    64 => TypeCodes::UINT64,
 ];
 
-const UINT_LE_BY_WIDTH = [
-    16 => Types::UINT16_LE,
-    32 => Types::UINT32_LE,
-    64 => Types::UINT64_LE,
+const UINT_LE_CODES_BY_WIDTH = [
+    16 => TypeCodes::UINT16_LE,
+    32 => TypeCodes::UINT32_LE,
+    64 => TypeCodes::UINT64_LE,
 ];
 
 function is_valid_name(string $name): bool
