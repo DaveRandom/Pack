@@ -2,7 +2,7 @@
 
 namespace DaveRandom\Pack;
 
-interface Element
+interface Type
 {
     function generatePackCode(PackCompilationContext $context, int $count = null);
 }

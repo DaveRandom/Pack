@@ -2,7 +2,7 @@
 
 namespace DaveRandom\Pack;
 
-abstract class IntegerType implements Element
+abstract class IntegerType implements Type
 {
     const UNSIGNED = 0b01;
     const LITTLE_ENDIAN = 0b10;

@@ -4,12 +4,12 @@ namespace DaveRandom\Pack;
 
 final class Struct implements Vector
 {
-    /** @var Element[] */
+    /** @var Type[] */
     private $elements = [];
     private $finite;
 
     /**
-     * @param Element[] $elements
+     * @param Type[] $elements
      */
     public function __construct(array $elements)
     {
@@ -20,8 +20,8 @@ final class Struct implements Vector
                 throw new \InvalidArgumentException("Invalid struct element name: {$name}");
             }
 
-            if (!$element instanceof Element) {
-                throw new \InvalidArgumentException(Struct::class . ' may only contain instances of ' . Element::class);
+            if (!$element instanceof Type) {
+                throw new \InvalidArgumentException(Struct::class . ' may only contain instances of ' . Type::class);
             }
 
             if (!$element instanceof Vector || $element->isFinite()) {

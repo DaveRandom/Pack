@@ -8,7 +8,7 @@ final class ArrayOf implements Vector
     private $element;
     private $bounds;
 
-    public function __construct(Element $element, int $bounds = UNBOUNDED)
+    public function __construct(Type $element, int $bounds = UNBOUNDED)
     {
         if ($bounds < 1 && $bounds !== UNBOUNDED) {
             throw new \InvalidArgumentException('Bounds of array must be positive integer or unbounded');
