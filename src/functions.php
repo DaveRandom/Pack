@@ -65,3 +65,8 @@ const UINT_LE_BY_WIDTH = [
     32 => Types::UINT32_LE,
     64 => Types::UINT64_LE,
 ];
+
+function is_valid_name(string $name): bool
+{
+    return (bool)\preg_match('/[a-z_\x80-\xff][a-z0-9_\x80-\xff]*/i', $name);
+}

@@ -75,10 +75,28 @@ final class PackCompilationContext
         }
     }
 
+    public function getCurrentArgPath(): array
+    {
+        return $this->currentArgPath;
+    }
+
+    public function setCurrentArgPath(array $path)
+    {
+        $oldPath = $this->currentArgPath;
+        $this->currentArgPath = $path;
+
+        return $oldPath;
+    }
+
     public function getCurrentArg(): string
     {
-        return !empty($this->currentArgPath)
-            ? '$' . self::ARGS_VAR_NAME . '[' . \implode('][', $this->currentArgPath) . ']'
+        return $this->getArg($this->currentArgPath);
+    }
+
+    public function getArg(array $path): string
+    {
+        return !empty($path)
+            ? '$' . self::ARGS_VAR_NAME . '[' . \implode('][', $path) . ']'
             : '$' . self::ARGS_VAR_NAME;
     }
 
@@ -111,7 +129,7 @@ final class PackCompilationContext
 
     public function popArgDimension()
     {
-        \array_pop($this->currentArgPath);
+        return \array_pop($this->currentArgPath);
     }
 
     public function getCodeLines(): array

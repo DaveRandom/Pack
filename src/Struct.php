@@ -16,7 +16,7 @@ final class Struct implements Vector
         $finite = true;
 
         foreach ($elements as $name => $element) {
-            if (!\preg_match('/[a-z_\x7f-\xff][a-z0-9_\x7f-\xff]*/i', $name)) {
+            if (!is_valid_name($name)) {
                 throw new \InvalidArgumentException("Invalid struct element name: {$name}");
             }
 

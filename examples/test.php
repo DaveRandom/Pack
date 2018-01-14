@@ -15,7 +15,7 @@ $struct = new Struct([
             'substruct' => new Struct([
                 'u161' => new UInt16(),
                 'i16' => new Int16(),
-                'u162' => new UInt16(),
+                'u162' => new Reference(new UInt32(), '../field3'),
                 'u163' => new UInt16(),
             ]),
             'array2'  => new ArrayOf(new UInt8, 7),
