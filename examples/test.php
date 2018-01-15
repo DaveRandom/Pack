@@ -7,6 +7,7 @@ use DaveRandom\Pack\Types\ArrayOf;
 use DaveRandom\Pack\Types\Int16;
 use DaveRandom\Pack\Types\Int32;
 use DaveRandom\Pack\Types\IntegerType;
+use DaveRandom\Pack\Types\LengthPrefixedString;
 use DaveRandom\Pack\Types\Reference;
 use DaveRandom\Pack\Types\Struct;
 use DaveRandom\Pack\Types\UInt16;
@@ -31,7 +32,8 @@ $struct = new Struct([
             ]),
             'array2'  => new ArrayOf(new UInt8, 7),
         ])
-    )
+    , 3),
+    'strings' => new ArrayOf(new LengthPrefixedString(new UInt8()))
 ]);
 
 $packer = (new Compiler)->compilePacker($struct);
@@ -47,7 +49,6 @@ var_dump($packer->pack([
             'substruct' => [
                 'u161' => 0x2061,
                 'i16' => 0x6161,
-                'u162' => 0x6161,
                 'u163' => 0x6120,
             ],
             'array2' => [0x54, 0x68, 0x69, 0x73, 0x20, 0x63, 0x6f],
@@ -60,7 +61,6 @@ var_dump($packer->pack([
             'substruct' => [
                 'u161' => 0x2061,
                 'i16' => 0x6161,
-                'u162' => 0x6161,
                 'u163' => 0x6120,
             ],
             'array2' => [0x54, 0x68, 0x69, 0x73, 0x20, 0x63, 0x6f],
@@ -73,10 +73,10 @@ var_dump($packer->pack([
             'substruct' => [
                 'u161' => 0x2061,
                 'i16' => 0x6161,
-                'u162' => 0x6161,
                 'u163' => 0x6120,
             ],
             'array2' => [0x54, 0x68, 0x69, 0x73, 0x20, 0x63, 0x6f],
         ],
-    ]
+    ],
+    'strings' => ['1234567890', '1234567890', '1234567890'],
 ]));

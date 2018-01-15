@@ -13,6 +13,15 @@ abstract class NumericType implements Type
     private $specifier;
     private $reverse;
 
+    public function generatePackCodeForExpression(PackCompilationContext $ctx, string $expr)
+    {
+        if ($this->reverse) {
+            $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$expr}))");
+        } else {
+            $ctx->appendSpecifier($this->specifier, null, $expr);
+        }
+    }
+
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
     {
         if (!$this->reverse) {
