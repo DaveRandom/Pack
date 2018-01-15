@@ -2,7 +2,7 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\PackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class NullTerminatedString

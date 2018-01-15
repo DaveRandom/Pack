@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack\Compilation;
+namespace DaveRandom\Pack\Compilation\Pack;
 
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class PackCompilationContext
+final class CompilationContext
 {
     const ARGS_VAR_NAME = '$‽args‽';
     const RESULT_VAR_NAME = '$‽result‽';

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack\Compilation;
+namespace DaveRandom\Pack\Compilation\Pack;
 
 final class Block implements CodeElement
 {
@@ -51,7 +51,7 @@ final class Block implements CodeElement
 
         foreach ($this->innerCodeElements as $element) {
             if ($element instanceof AssignmentOperation) {
-                $result .= $padding . \str_repeat(' ', $increment) . PackCompilationContext::RESULT_VAR_NAME
+                $result .= $padding . \str_repeat(' ', $increment) . CompilationContext::RESULT_VAR_NAME
                     . " {$assignmentOperator} {$element->getCode($innerIndentation, $increment, $assignmentOperator)};\n";
                 $assignmentOperator = '.=';
             } else {

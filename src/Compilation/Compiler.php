@@ -22,7 +22,7 @@ return new class($type) implements \\' . Packer::class . '
         return $this->definition;
     }
 
-    public function pack(array ' . PackCompilationContext::ARGS_VAR_NAME . '): string
+    public function pack(array ' . Pack\CompilationContext::ARGS_VAR_NAME . '): string
     {
         %s
     }
@@ -31,7 +31,7 @@ return new class($type) implements \\' . Packer::class . '
 
     public function compilePacker(VectorType $type): Packer
     {
-        $ctx = new PackCompilationContext();
+        $ctx = new Pack\CompilationContext();
         $type->generatePackCode($ctx);
 
         \printf(self::PACKER_TEMPLATE, \trim($ctx->getCode(8, 4)));

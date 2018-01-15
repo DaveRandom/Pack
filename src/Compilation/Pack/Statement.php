@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack\Compilation;
+namespace DaveRandom\Pack\Compilation\Pack;
 
 final class Statement implements CodeElement
 {
