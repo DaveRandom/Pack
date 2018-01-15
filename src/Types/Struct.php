@@ -10,6 +10,7 @@ final class Struct implements VectorType
 {
     private $elements = [];
     private $finite;
+    private $size;
 
     private function generatePackCodeForCurrentArg(PackCompilationContext $ctx)
     {
@@ -42,6 +43,7 @@ final class Struct implements VectorType
     public function __construct(array $elements)
     {
         $finite = true;
+        $size = 0;
 
         foreach ($elements as $name => $element) {
             if (!is_valid_name($name)) {
@@ -50,6 +52,12 @@ final class Struct implements VectorType
 
             if (!$element instanceof Type) {
                 throw new \InvalidArgumentException(Struct::class . ' may only contain instances of ' . Type::class);
+            }
+
+            if ($size !== UNBOUNDED && $element->isFixedSize()) {
+                $size += $element->getSize();
+            } else {
+                $size = UNBOUNDED;
             }
 
             if (!$element instanceof VectorType || $element->isFinite()) {
@@ -65,6 +73,7 @@ final class Struct implements VectorType
 
         $this->elements = $elements;
         $this->finite = $finite;
+        $this->size = $size;
     }
 
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
@@ -76,6 +85,16 @@ final class Struct implements VectorType
         } else {
             $this->generatePackCodeForBoundedArray($ctx, $count);
         }
+    }
+
+    public function isFixedSize(): bool
+    {
+        return $this->size !== UNBOUNDED;
+    }
+
+    public function getSize(): int
+    {
+        return $this->size;
     }
 
     public function count(): int

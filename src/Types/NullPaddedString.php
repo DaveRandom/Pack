@@ -30,6 +30,16 @@ final class NullPaddedString implements VectorType
         }
     }
 
+    public function isFixedSize(): bool
+    {
+        return true;
+    }
+
+    public function getSize(): int
+    {
+        return $this->length;
+    }
+
     public function count(): int
     {
         return $this->length;

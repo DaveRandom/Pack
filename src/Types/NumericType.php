@@ -3,15 +3,54 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\TypeCodes;
 use const DaveRandom\Pack\UNBOUNDED;
 
 abstract class NumericType implements ScalarType
 {
     const LITTLE_ENDIAN = 0b01;
 
+    private static $specifierSizes = [
+        TypeCodes::INT_SYS    => \DaveRandom\Pack\INT_SIZE,
+        TypeCodes::UINT_SYS   => \DaveRandom\Pack\INT_SIZE,
+
+        TypeCodes::INT8       => 1,
+        TypeCodes::UINT8      => 1,
+
+        TypeCodes::INT16_SYS  => 2,
+        TypeCodes::UINT16     => 2,
+        TypeCodes::UINT16_LE  => 2,
+        TypeCodes::UINT16_SYS => 2,
+
+        TypeCodes::INT32_SYS  => 4,
+        TypeCodes::UINT32     => 4,
+        TypeCodes::UINT32_LE  => 4,
+        TypeCodes::UINT32_SYS => 4,
+
+        TypeCodes::INT64_SYS  => 8,
+        TypeCodes::UINT64     => 8,
+        TypeCodes::UINT64_LE  => 8,
+        TypeCodes::UINT64_SYS => 8,
+
+        TypeCodes::FLOAT      => \DaveRandom\Pack\FLOAT_SIZE,
+        TypeCodes::FLOAT_LE   => \DaveRandom\Pack\FLOAT_SIZE,
+        TypeCodes::FLOAT_SYS  => \DaveRandom\Pack\FLOAT_SIZE,
+
+        TypeCodes::DOUBLE     => \DaveRandom\Pack\DOUBLE_SIZE,
+        TypeCodes::DOUBLE_LE  => \DaveRandom\Pack\DOUBLE_SIZE,
+        TypeCodes::DOUBLE_SYS => \DaveRandom\Pack\DOUBLE_SIZE,
+    ];
+
     private $width;
     private $specifier;
     private $reverse;
+
+    protected function __construct(int $width, string $specifier, bool $reverse)
+    {
+        $this->width = $width;
+        $this->specifier = $specifier;
+        $this->reverse = $reverse;
+    }
 
     public function generatePackCodeForExpression(PackCompilationContext $ctx, string $expr)
     {
@@ -41,10 +80,13 @@ abstract class NumericType implements ScalarType
         }
     }
 
-    protected function __construct(int $width, string $specifier, bool $reverse)
+    public function isFixedSize(): bool
     {
-        $this->width = $width;
-        $this->specifier = $specifier;
-        $this->reverse = $reverse;
+        return true;
+    }
+
+    public function getSize(): int
+    {
+        return self::$specifierSizes[$this->specifier];
     }
 }

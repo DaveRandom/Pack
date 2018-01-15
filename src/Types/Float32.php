@@ -2,11 +2,6 @@
 
 namespace DaveRandom\Pack\Types;
 
-use const DaveRandom\Pack\DOUBLE_WIDTH;
-use const DaveRandom\Pack\FLOAT_WIDTH;
-use const DaveRandom\Pack\HAVE_FLOAT_ORDER;
-use const DaveRandom\Pack\SYSTEM_LITTLE_ENDIAN;
-
 final class Float32 extends NumericType
 {
     public function __construct(int $flags)
@@ -17,21 +12,21 @@ final class Float32 extends NumericType
         $cacheKey = (int)$littleEndian;
 
         if (!isset($codeInfo[$cacheKey])) {
-            if (FLOAT_WIDTH === 32) {
-                if (HAVE_FLOAT_ORDER) {
+            if (\DaveRandom\Pack\FLOAT_WIDTH === 32) {
+                if (\DaveRandom\Pack\HAVE_FLOAT_ORDER) {
                     $specifier = ['G', 'g'][$cacheKey];
                     $reverse = false;
                 } else {
                     $specifier = 'f';
-                    $reverse = $littleEndian !== SYSTEM_LITTLE_ENDIAN;
+                    $reverse = $littleEndian !== \DaveRandom\Pack\SYSTEM_LITTLE_ENDIAN;
                 }
-            } else if (DOUBLE_WIDTH === 32) {
-                if (HAVE_FLOAT_ORDER) {
+            } else if (\DaveRandom\Pack\DOUBLE_WIDTH === 32) {
+                if (\DaveRandom\Pack\HAVE_FLOAT_ORDER) {
                     $specifier = ['E', 'e'][$cacheKey];
                     $reverse = false;
                 } else {
                     $specifier = 'd';
-                    $reverse = $littleEndian !== SYSTEM_LITTLE_ENDIAN;
+                    $reverse = $littleEndian !== \DaveRandom\Pack\SYSTEM_LITTLE_ENDIAN;
                 }
             } else {
                 throw new \RuntimeException('System does not have a 32-bit float representation');

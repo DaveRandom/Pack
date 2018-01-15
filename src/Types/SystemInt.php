@@ -2,12 +2,10 @@
 
 namespace DaveRandom\Pack\Types;
 
-use const DaveRandom\Pack\INT_WIDTH;
-
 final class SystemInt extends IntegerType
 {
     public function __construct(int $flags = 0)
     {
-        parent::__construct(INT_WIDTH, $flags);
+        parent::__construct(\DaveRandom\Pack\INT_WIDTH, $flags);
     }
 }

@@ -7,4 +7,6 @@ use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContex
 interface Type
 {
     function generatePackCode(PackCompilationContext $context, int $count = null);
+    function isFixedSize(): bool;
+    function getSize(): int;
 }

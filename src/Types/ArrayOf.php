@@ -7,12 +7,14 @@ use const DaveRandom\Pack\UNBOUNDED;
 
 final class ArrayOf implements VectorType
 {
-    private $element;
+    private $elementType;
     private $bounds;
+    private $finite;
+    private $size;
 
     private function generatePackCodeForCurrentArg(PackCompilationContext $ctx)
     {
-        $this->element->generatePackCode($ctx, $this->bounds);
+        $this->elementType->generatePackCode($ctx, $this->bounds);
     }
 
     private function generatePackCodeForUnboundedArray(PackCompilationContext $ctx)
@@ -26,23 +28,27 @@ final class ArrayOf implements VectorType
     {
         for ($i = 0; $i < $count; $i++) {
             $ctx->pushArgDimension($i);
-            $this->element->generatePackCode($ctx, $this->bounds);
+            $this->elementType->generatePackCode($ctx, $this->bounds);
             $ctx->popArgDimension();
         }
     }
 
-    public function __construct(Type $element, int $bounds = UNBOUNDED)
+    public function __construct(Type $elementType, int $bounds = UNBOUNDED)
     {
         if ($bounds < 1 && $bounds !== UNBOUNDED) {
             throw new \InvalidArgumentException('Bounds of array must be positive integer or unbounded');
         }
 
-        if ($element instanceof VectorType && !$element->isFinite() && $bounds !== 1) {
+        if ($elementType instanceof VectorType && !$elementType->isFinite() && $bounds !== 1) {
             throw new \InvalidArgumentException('Unbounded array must be the last element of the top level structure');
         }
 
-        $this->element = $element;
+        $this->elementType = $elementType;
         $this->bounds = $bounds;
+        $this->finite = $bounds !== UNBOUNDED;
+        $this->size = $bounds !== UNBOUNDED && $this->elementType->isFixedSize()
+            ? $bounds * $this->elementType->getSize()
+            : UNBOUNDED;
     }
 
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
@@ -56,6 +62,16 @@ final class ArrayOf implements VectorType
         }
     }
 
+    public function isFixedSize(): bool
+    {
+        return $this->size !== UNBOUNDED;
+    }
+
+    public function getSize(): int
+    {
+        return $this->size;
+    }
+
     public function count(): int
     {
         return $this->bounds;
@@ -63,6 +79,6 @@ final class ArrayOf implements VectorType
 
     public function isFinite(): bool
     {
-        return $this->bounds !== UNBOUNDED;
+        return $this->finite;
     }
 }

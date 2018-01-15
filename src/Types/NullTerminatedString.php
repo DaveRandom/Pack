@@ -29,6 +29,16 @@ final class NullTerminatedString
         }
     }
 
+    public function isFixedSize(): bool
+    {
+        return false;
+    }
+
+    public function getSize(): int
+    {
+        return UNBOUNDED;
+    }
+
     public function count(): int
     {
         return UNBOUNDED;
