@@ -2,10 +2,10 @@
 
 namespace DaveRandom\Pack;
 
-use DaveRandom\Pack\Types\Vector;
+use DaveRandom\Pack\Types\VectorType;
 
 interface Packer
 {
     function pack(array $args): string;
-    function getDefinition(): Vector;
+    function getDefinition(): VectorType;
 }

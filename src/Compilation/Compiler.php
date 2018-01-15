@@ -3,12 +3,12 @@
 namespace DaveRandom\Pack\Compilation;
 
 use DaveRandom\Pack\Packer;
-use DaveRandom\Pack\Types\Vector;
+use DaveRandom\Pack\Types\VectorType;
 
 final class Compiler
 {
     const PACKER_TEMPLATE = '
-return new class($element) implements \\' . Packer::class . '
+return new class($type) implements \\' . Packer::class . '
 {
     private $definition;
     
@@ -17,7 +17,7 @@ return new class($element) implements \\' . Packer::class . '
         $this->definition = $definition;
     }
 
-    public function getDefinition(): \\' . Vector::class . '
+    public function getDefinition(): \\' . VectorType::class . '
     {
         return $this->definition;
     }
@@ -30,12 +30,12 @@ return new class($element) implements \\' . Packer::class . '
 };
 ';
 
-    public function compilePacker(Vector $element): Packer
+    public function compilePacker(VectorType $type): Packer
     {
         $ctx = new PackCompilationContext();
-        $element->generatePackCode($ctx);
+        $type->generatePackCode($ctx);
 
         \printf(self::PACKER_TEMPLATE, \trim($ctx->getCode(8, 4)));
-        return eval(\sprintf(self::PACKER_TEMPLATE, \ltrim($ctx->getCode(8, 4))));
+        return eval(\sprintf(self::PACKER_TEMPLATE, \trim($ctx->getCode(8, 4))));
     }
 }

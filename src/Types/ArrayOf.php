@@ -5,7 +5,7 @@ namespace DaveRandom\Pack\Types;
 use DaveRandom\Pack\Compilation\PackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class ArrayOf implements Vector
+final class ArrayOf implements VectorType
 {
     private $element;
     private $bounds;
@@ -37,7 +37,7 @@ final class ArrayOf implements Vector
             throw new \InvalidArgumentException('Bounds of array must be positive integer or unbounded');
         }
 
-        if ($element instanceof Vector && !$element->isFinite() && $bounds !== 1) {
+        if ($element instanceof VectorType && !$element->isFinite() && $bounds !== 1) {
             throw new \InvalidArgumentException('Unbounded array must be the last element of the top level structure');
         }
 

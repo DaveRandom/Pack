@@ -5,7 +5,7 @@ namespace DaveRandom\Pack\Types;
 use DaveRandom\Pack\Compilation\PackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
-abstract class NumericType implements Type
+abstract class NumericType implements ScalarType
 {
     const LITTLE_ENDIAN = 0b01;
 

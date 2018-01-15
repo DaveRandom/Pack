@@ -6,7 +6,7 @@ use DaveRandom\Pack\Compilation\PackCompilationContext;
 use function DaveRandom\Pack\is_valid_name;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class Struct implements Vector
+final class Struct implements VectorType
 {
     private $elements = [];
     private $finite;
@@ -52,7 +52,7 @@ final class Struct implements Vector
                 throw new \InvalidArgumentException(Struct::class . ' may only contain instances of ' . Type::class);
             }
 
-            if (!$element instanceof Vector || $element->isFinite()) {
+            if (!$element instanceof VectorType || $element->isFinite()) {
                 continue;
             }
 

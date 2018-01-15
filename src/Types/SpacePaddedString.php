@@ -5,7 +5,7 @@ namespace DaveRandom\Pack\Types;
 use DaveRandom\Pack\Compilation\PackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class SpacePaddedString implements Vector
+final class SpacePaddedString implements VectorType
 {
     private $length;
 

@@ -2,7 +2,7 @@
 
 namespace DaveRandom\Pack\Types;
 
-interface Vector extends Type, \Countable
+interface VectorType extends Type, \Countable
 {
     function count(): int;
     function isFinite(): bool;

@@ -5,7 +5,7 @@ namespace DaveRandom\Pack\Types;
 use DaveRandom\Pack\Compilation\PackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class LengthPrefixedString implements Vector
+final class LengthPrefixedString implements VectorType
 {
     private $lengthType;
 
