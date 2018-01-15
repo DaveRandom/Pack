@@ -32,7 +32,7 @@ final class PackCompilationContext
             list($specifier, $arg, $count) = $this->pendingPackSpecifiers->dequeue();
 
             if ($count === null) { // scalar
-                $specifiers[] = $specifier . $count;
+                $specifiers[] = $specifier;
                 $args[] = $arg;
                 continue;
             }
@@ -106,11 +106,28 @@ final class PackCompilationContext
         return $this->getArg($this->currentArgPath);
     }
 
+    public function getCurrentArgAsBoundedArrayArgList(int $count): string
+    {
+        return $this->getArgAsBoundedArrayArgList($this->currentArgPath, $count);
+    }
+
     public function getArg(array $path): string
     {
         return !empty($path)
             ? '$' . self::ARGS_VAR_NAME . '[' . \implode('][', $path) . ']'
             : '$' . self::ARGS_VAR_NAME;
+    }
+
+    public function getArgAsBoundedArrayArgList(array $path, int $count): string
+    {
+        $arg = $this->getArg($path);
+        $result = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $result[] = "{$arg}[{$i}]";;
+        }
+
+        return \implode(', ', $result);
     }
 
     public function beginIterateCurrentArg()

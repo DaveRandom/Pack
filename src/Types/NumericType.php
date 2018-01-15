@@ -21,59 +21,16 @@ abstract class NumericType implements Type
         }
 
         $arg = $ctx->getCurrentArg();
+        $size = $this->width / 8;
 
         if ($count === null) {
             $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$arg}))");
-            return;
-        }
-
-        $size = $this->width / 8;
-
-        if ($count === UNBOUNDED) {
+        } else if ($count === UNBOUNDED) {
             $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...{$arg}), {$size})))");
-            return;
+        } else {
+            $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$ctx->getCurrentArgAsBoundedArrayArgList($count)}), {$size})))");
         }
-
-        $args = [];
-
-        for ($i = 0; $i < $count; $i++) {
-            $args[] = "{$arg}[{$i}]";;
-        }
-
-        $args = \implode(', ', $args);
-
-        $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$args}), {$size})))");
     }
-
-    /*
-    public function generateUnpackCode(string $name): array
-    {
-        $specifier = INT_BY_SIZE[$this->size];
-        $unpackKey = \var_export($name, true);
-        $byteCount = $this->size / 8;
-
-        if ($this->quantity === 1) {
-            return [
-                "\$result[{$unpackKey}] = \unpack('{$specifier}', \strrev(\substr(\$data, \$offset, {$byteCount})))[1];",
-                "\$offset += {$byteCount};",
-            ];
-        }
-
-        if ($this->quantity === Element::REPEAT) {
-            return [
-                "\$result[{$unpackKey}] = \array_values(\unpack('{$specifier}*', \implode('', \array_map('strrev', \str_split(\substr(\$data, \$offset), {$byteCount})))));",
-                "\$offset = \$length - ((\$length - \$offset) % {$byteCount});",
-            ];
-        }
-
-        $length = $byteCount * $this->quantity;
-
-        return [
-            "\$result[{$unpackKey}] = \array_values(\unpack('{$specifier}{$this->quantity}', \implode('', \array_map('strrev', \str_split(\substr(\$data, \$offset, {$length}), {$byteCount})))));",
-            "\$offset += {$length};",
-        ];
-    }
-    */
 
     protected function __construct(int $width, string $specifier, bool $reverse)
     {
