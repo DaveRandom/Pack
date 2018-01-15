@@ -22,10 +22,9 @@ return new class($type) implements \\' . Packer::class . '
         return $this->definition;
     }
 
-    public function pack(array $' . PackCompilationContext::ARGS_VAR_NAME . '): string
+    public function pack(array ' . PackCompilationContext::ARGS_VAR_NAME . '): string
     {
         %s
-        return $' . PackCompilationContext::RESULT_VAR_NAME . ';
     }
 };
 ';

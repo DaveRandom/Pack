@@ -6,16 +6,18 @@ use const DaveRandom\Pack\UNBOUNDED;
 
 final class PackCompilationContext
 {
-    const ARGS_VAR_NAME = '‽args‽';
-    const RESULT_VAR_NAME = '‽result‽';
+    const ARGS_VAR_NAME = '$‽args‽';
+    const RESULT_VAR_NAME = '$‽result‽';
 
     private $iterationDepth = 0;
-    private $haveResult = false;
 
     private $currentArgPath = [];
 
     /** @var \SplQueue */
     private $pendingPackSpecifiers;
+
+    /** @var \SplQueue */
+    private $pendingResultExpressions;
 
     /** @var \SplStack<Block> */
     private $blocks;
@@ -23,7 +25,7 @@ final class PackCompilationContext
     /** @var Block */
     private $currentBlock;
 
-    private function compilePendingSpecifiers()
+    private function compilePendingPackSpecifiers()
     {
         $specifiers = [];
         $args = [];
@@ -52,13 +54,23 @@ final class PackCompilationContext
         }
 
         if (!empty($specifiers)) {
-            $this->appendResult("\pack(" . \var_export(\implode('', $specifiers), true) . ", " . \implode(', ', $args) . ")");
+            $this->pendingResultExpressions->push("\pack(" . \var_export(\implode('', $specifiers), true) . ", " . \implode(', ', $args) . ")");
         }
+    }
+
+    private function endCurrentBlock()
+    {
+        $this->compilePendingResultExpressions();
+
+        $innerBlock = $this->blocks->pop();
+        $this->currentBlock = $this->blocks->top();
+        $this->currentBlock->appendElement($innerBlock);
     }
 
     public function __construct()
     {
         $this->pendingPackSpecifiers = new \SplQueue();
+        $this->pendingResultExpressions = new \SplQueue();
         $this->blocks = new \SplStack();
 
         $this->blocks->push($this->currentBlock = new Block());
@@ -69,23 +81,35 @@ final class PackCompilationContext
         $this->pendingPackSpecifiers->enqueue([$specifier, $arg ?? $this->getCurrentArg(), $count]);
     }
 
-    public function appendCode(string ...$statements)
+    public function appendResult(string $expr)
     {
-        $this->compilePendingSpecifiers();
+        $this->compilePendingPackSpecifiers();
 
-        foreach ($statements as $statement) {
-            $this->currentBlock->appendStatement(new Statement($statement));
+        $this->pendingResultExpressions->push($expr);
+    }
+
+    private function compilePendingResultExpressions()
+    {
+        $this->compilePendingPackSpecifiers();
+
+        $expressions = [];
+
+        while ($this->pendingResultExpressions->count() > 0) {
+            $expressions[] = $this->pendingResultExpressions->dequeue();
+        }
+
+        if (!empty($expressions)) {
+            $this->currentBlock->appendElement(new AssignmentOperation($expressions));
         }
     }
 
-    public function appendResult(string $expr)
+    public function appendCode(string ...$statements)
     {
-        $this->compilePendingSpecifiers();
+        $this->compilePendingResultExpressions();
 
-        $operator = $this->haveResult ? '.=' : '=';
-        $this->haveResult = true;
-
-        $this->currentBlock->appendStatement(new Statement('$' . self::RESULT_VAR_NAME . ' ' . $operator . ' ' . $expr . ';'));
+        foreach ($statements as $statement) {
+            $this->currentBlock->appendElement(new Statement($statement));
+        }
     }
 
     public function getCurrentArgPath(): array
@@ -114,8 +138,8 @@ final class PackCompilationContext
     public function getArg(array $path): string
     {
         return !empty($path)
-            ? '$' . self::ARGS_VAR_NAME . '[' . \implode('][', $path) . ']'
-            : '$' . self::ARGS_VAR_NAME;
+            ? self::ARGS_VAR_NAME . '[' . \implode('][', $path) . ']'
+            : self::ARGS_VAR_NAME;
     }
 
     public function getArgAsBoundedArrayArgList(array $path, int $count): string
@@ -130,30 +154,29 @@ final class PackCompilationContext
         return \implode(', ', $result);
     }
 
+    private function beginNewBlock(Block $block)
+    {
+        $this->compilePendingResultExpressions();
+
+        $this->blocks->push($block);
+        $this->currentBlock = $block;
+    }
+
     public function beginIterateCurrentArg()
     {
-        $this->compilePendingSpecifiers();
-
-        if (!$this->haveResult) {
-            $this->currentBlock->appendStatement(new Statement('$' . self::RESULT_VAR_NAME . ' = \'\';'));
-            $this->haveResult = true;
-        }
-
         $arg = $this->getCurrentArg();
 
-        $iterationVar = "\$‽" . ++$this->iterationDepth . "‽";
-        $this->currentArgPath[] = $iterationVar;
+        $iterationLevelId = ++$this->iterationDepth;
+        $keyVar = "\$‽k{$iterationLevelId}‽";
+        $valueVar = "\$‽v{$iterationLevelId}‽";
+        $this->currentArgPath[] = $keyVar;
 
-        $this->blocks->push($this->currentBlock = new Block("foreach ({$arg} as {$iterationVar} => \$‽trash‽)"));
+        $this->beginNewBlock(new Block("foreach ({$arg} as {$keyVar} => {$valueVar})"));
     }
 
     public function endIterateCurrentArg()
     {
-        $this->compilePendingSpecifiers();
-
-        $innerBlock = $this->blocks->pop();
-        $this->currentBlock = $this->blocks->top();
-        $this->currentBlock->appendBlock($innerBlock);
+        $this->endCurrentBlock();
 
         \array_pop($this->currentArgPath);
         $this->iterationDepth--;
@@ -171,8 +194,12 @@ final class PackCompilationContext
 
     public function getCode(int $indentation, int $increment = 4)
     {
-        $this->compilePendingSpecifiers();
+        while ($this->blocks->count() > 1) {
+            $this->endCurrentBlock();
+        }
 
-        return $this->blocks->bottom()->getCode($indentation, $increment);
+        $this->compilePendingResultExpressions();
+
+        return $this->blocks->bottom()->getCode($indentation, $increment, '=');
     }
 }

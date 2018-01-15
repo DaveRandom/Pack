@@ -2,7 +2,7 @@
 
 namespace DaveRandom\Pack\Compilation;
 
-final class Statement
+final class Statement implements CodeElement
 {
     private $statement;
 
@@ -11,7 +11,7 @@ final class Statement
         $this->statement = $statement;
     }
 
-    public function getCode(int $indentation): string
+    public function getCode(int $indentation, int $increment, string $assignmentOperator): string
     {
         return \str_repeat(' ', $indentation) . $this->statement;
     }
