@@ -6,8 +6,9 @@ use const DaveRandom\Pack\UNBOUNDED;
 
 final class CompilationContext
 {
-    const ARGS_VAR_NAME = '$‽args‽';
     const RESULT_VAR_NAME = '$‽result‽';
+
+    private $argsVarName;
 
     private $iterationDepth = 0;
 
@@ -67,8 +68,10 @@ final class CompilationContext
         $this->currentBlock->appendElement($innerBlock);
     }
 
-    public function __construct()
+    public function __construct(string $argsVarName)
     {
+        $this->argsVarName = $argsVarName;
+
         $this->pendingPackSpecifiers = new \SplQueue();
         $this->pendingResultExpressions = new \SplQueue();
         $this->blocks = new \SplStack();
@@ -138,8 +141,8 @@ final class CompilationContext
     public function getArg(array $path): string
     {
         return !empty($path)
-            ? self::ARGS_VAR_NAME . '[' . \implode('][', $path) . ']'
-            : self::ARGS_VAR_NAME;
+            ? $this->argsVarName . '[' . \implode('][', $path) . ']'
+            : $this->argsVarName;
     }
 
     public function getArgAsBoundedArrayArgList(array $path, int $count): string
