@@ -18,14 +18,18 @@ final class NullTerminatedString
     {
         if ($count === null) {
             $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
-        } else if ($count === UNBOUNDED) {
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
             $ctx->beginIterateCurrentArg();
             $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
             $ctx->endIterateCurrentArg();
-        } else {
-            for ($i = 0; $i < $count; $i++) {
-                $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
-            }
+            return;
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
         }
     }
 

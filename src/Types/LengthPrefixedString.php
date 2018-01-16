@@ -19,16 +19,20 @@ final class LengthPrefixedString implements VectorType
         if ($count === null) {
             $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$ctx->getCurrentArg()})");
             $ctx->appendResult($ctx->getCurrentArg());
-        } else if ($count === UNBOUNDED) {
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
             $ctx->beginIterateCurrentArg();
             $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$ctx->getCurrentArg()})");
             $ctx->appendResult($ctx->getCurrentArg());
             $ctx->endIterateCurrentArg();
-        } else {
-            for ($i = 0; $i < $count; $i++) {
-                $this->lengthType->generatePackCodeForExpression($ctx, "{$ctx->getCurrentArg()}[{$i}]");
-                $ctx->appendResult("{$ctx->getCurrentArg()}[{$i}]");
-            }
+            return;
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            $this->lengthType->generatePackCodeForExpression($ctx, "{$ctx->getCurrentArg()}[{$i}]");
+            $ctx->appendResult("{$ctx->getCurrentArg()}[{$i}]");
         }
     }
 

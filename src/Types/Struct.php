@@ -80,11 +80,15 @@ final class Struct implements VectorType
     {
         if ($count === null) {
             $this->generatePackCodeForCurrentArg($ctx);
-        } else if ($count === UNBOUNDED) {
-            $this->generatePackCodeForUnboundedArray($ctx);
-        } else {
-            $this->generatePackCodeForBoundedArray($ctx, $count);
+            return;
         }
+
+        if ($count === UNBOUNDED) {
+            $this->generatePackCodeForUnboundedArray($ctx);
+            return;
+        }
+
+        $this->generatePackCodeForBoundedArray($ctx, $count);
     }
 
     public function isFixedSize(): bool

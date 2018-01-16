@@ -21,12 +21,16 @@ final class SpacePaddedString implements VectorType
 
         if ($count === null) {
             $ctx->appendSpecifier($specifier);
-        } else if ($count === UNBOUNDED) {
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
             $ctx->appendResult("\implode('', \array_map(function(\$s) { return \pack('{$specifier}', \$s); }, {$arg}))");
-        } else {
-            for ($i = 0; $i < $count; $i++) {
-                $ctx->appendSpecifier($specifier, null, "{$arg}[{$i}]");
-            }
+            return;
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            $ctx->appendSpecifier($specifier, null, "{$arg}[{$i}]");
         }
     }
 

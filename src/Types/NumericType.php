@@ -9,10 +9,11 @@ use const DaveRandom\Pack\UNBOUNDED;
 abstract class NumericType implements ScalarType
 {
     const LITTLE_ENDIAN = 0b01;
+    const SYSTEM_TYPE_DEFAULT_FLAGS = \DaveRandom\Pack\SYSTEM_LITTLE_ENDIAN ? self::LITTLE_ENDIAN : 0;
 
     private static $specifierSizes = [
-        TypeCodes::INT_SYS    => \DaveRandom\Pack\INT_SIZE,
-        TypeCodes::UINT_SYS   => \DaveRandom\Pack\INT_SIZE,
+        TypeCodes::INT_SYS    => \DaveRandom\Pack\SYSTEM_INT_SIZE,
+        TypeCodes::UINT_SYS   => \DaveRandom\Pack\SYSTEM_INT_SIZE,
 
         TypeCodes::INT8       => 1,
         TypeCodes::UINT8      => 1,
@@ -32,13 +33,13 @@ abstract class NumericType implements ScalarType
         TypeCodes::UINT64_LE  => 8,
         TypeCodes::UINT64_SYS => 8,
 
-        TypeCodes::FLOAT      => \DaveRandom\Pack\FLOAT_SIZE,
-        TypeCodes::FLOAT_LE   => \DaveRandom\Pack\FLOAT_SIZE,
-        TypeCodes::FLOAT_SYS  => \DaveRandom\Pack\FLOAT_SIZE,
+        TypeCodes::FLOAT      => \DaveRandom\Pack\SYSTEM_FLOAT_SIZE,
+        TypeCodes::FLOAT_LE   => \DaveRandom\Pack\SYSTEM_FLOAT_SIZE,
+        TypeCodes::FLOAT_SYS  => \DaveRandom\Pack\SYSTEM_FLOAT_SIZE,
 
-        TypeCodes::DOUBLE     => \DaveRandom\Pack\DOUBLE_SIZE,
-        TypeCodes::DOUBLE_LE  => \DaveRandom\Pack\DOUBLE_SIZE,
-        TypeCodes::DOUBLE_SYS => \DaveRandom\Pack\DOUBLE_SIZE,
+        TypeCodes::DOUBLE     => \DaveRandom\Pack\SYSTEM_DOUBLE_SIZE,
+        TypeCodes::DOUBLE_LE  => \DaveRandom\Pack\SYSTEM_DOUBLE_SIZE,
+        TypeCodes::DOUBLE_SYS => \DaveRandom\Pack\SYSTEM_DOUBLE_SIZE,
     ];
 
     private $width;
@@ -54,11 +55,12 @@ abstract class NumericType implements ScalarType
 
     public function generatePackCodeForExpression(PackCompilationContext $ctx, string $expr)
     {
-        if ($this->reverse) {
-            $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$expr}))");
-        } else {
+        if (!$this->reverse) {
             $ctx->appendSpecifier($this->specifier, null, $expr);
+            return;
         }
+
+        $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$expr}))");
     }
 
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
@@ -73,11 +75,15 @@ abstract class NumericType implements ScalarType
 
         if ($count === null) {
             $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$arg}))");
-        } else if ($count === UNBOUNDED) {
-            $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...{$arg}), {$size})))");
-        } else {
-            $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$ctx->getCurrentArgAsBoundedArrayArgList($count)}), {$size})))");
+            return;
         }
+
+        if ($count === UNBOUNDED) {
+            $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...{$arg}), {$size})))");
+            return;
+        }
+
+        $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$ctx->getCurrentArgAsBoundedArrayArgList($count)}), {$size})))");
     }
 
     public function isFixedSize(): bool
