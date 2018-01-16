@@ -3,6 +3,7 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
 use DaveRandom\Pack\TypeCodes;
 use const DaveRandom\Pack\UNBOUNDED;
 
@@ -56,7 +57,7 @@ abstract class NumericType implements ScalarType
     public function generatePackCodeForExpression(PackCompilationContext $ctx, string $expr)
     {
         if (!$this->reverse) {
-            $ctx->appendSpecifier($this->specifier, null, $expr);
+            $ctx->appendPackSpecifier($this->specifier, null, $expr);
             return;
         }
 
@@ -66,7 +67,7 @@ abstract class NumericType implements ScalarType
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
     {
         if (!$this->reverse) {
-            $ctx->appendSpecifier($this->specifier, $count);
+            $ctx->appendPackSpecifier($this->specifier, $count);
             return;
         }
 
@@ -84,6 +85,30 @@ abstract class NumericType implements ScalarType
         }
 
         $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$ctx->getCurrentArgAsBoundedArrayArgList($count)}), {$size})))");
+    }
+
+    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    {
+        $size = $this->width / 8;
+
+        if (!$this->reverse) {
+            $ctx->appendUnpackSpecifier($this->specifier, $size, $count);
+            return;
+        }
+
+        if ($count === null) {
+            $ctx->appendResult("\unpack('{$this->specifier}', \strrev(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$size})))[1]", $size);
+            return;
+        }
+
+        if ($count !== UNBOUNDED) {
+            $length = $size * $count;
+            $ctx->appendResult("\array_values(\unpack('{$this->specifier}{$count}', \implode('', \array_map('strrev', \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$length}), {$size})))))", $length);
+            return;
+        }
+
+        // todo: unbounded array
+        throw new \Error('Not implemented');
     }
 
     public function isFixedSize(): bool

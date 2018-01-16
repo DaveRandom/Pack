@@ -20,7 +20,7 @@ final class SpacePaddedString implements VectorType
         $specifier = "A{$this->length}";
 
         if ($count === null) {
-            $ctx->appendSpecifier($specifier);
+            $ctx->appendPackSpecifier($specifier);
             return;
         }
 
@@ -30,7 +30,7 @@ final class SpacePaddedString implements VectorType
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $ctx->appendSpecifier($specifier, null, "{$arg}[{$i}]");
+            $ctx->appendPackSpecifier($specifier, null, "{$arg}[{$i}]");
         }
     }
 

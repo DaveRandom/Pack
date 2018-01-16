@@ -18,21 +18,39 @@ final class LengthPrefixedString implements VectorType
     {
         if ($count === null) {
             $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$ctx->getCurrentArg()})");
-            $ctx->appendResult($ctx->getCurrentArg());
+
+            if ($ctx->hasPendingPackSpecifiers()) {
+                $ctx->appendPackSpecifier('a*');
+            } else {
+                $ctx->appendResult($ctx->getCurrentArg());
+            }
+
             return;
         }
 
         if ($count === UNBOUNDED) {
             $ctx->beginIterateCurrentArg();
             $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$ctx->getCurrentArg()})");
-            $ctx->appendResult($ctx->getCurrentArg());
+
+            if ($ctx->hasPendingPackSpecifiers()) {
+                $ctx->appendPackSpecifier('a*');
+            } else {
+                $ctx->appendResult($ctx->getCurrentArg());
+            }
+
             $ctx->endIterateCurrentArg();
             return;
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $this->lengthType->generatePackCodeForExpression($ctx, "{$ctx->getCurrentArg()}[{$i}]");
-            $ctx->appendResult("{$ctx->getCurrentArg()}[{$i}]");
+            $arg = "{$ctx->getCurrentArg()}[{$i}]";
+            $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$arg})");
+
+            if ($ctx->hasPendingPackSpecifiers()) {
+                $ctx->appendPackSpecifier('a*', null, $arg);
+            } else {
+                $ctx->appendResult($arg);
+            }
         }
     }
 

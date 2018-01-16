@@ -3,6 +3,7 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class ArrayOf implements VectorType
@@ -30,6 +31,27 @@ final class ArrayOf implements VectorType
             $ctx->pushArgDimension($i);
             $this->elementType->generatePackCode($ctx, $this->bounds);
             $ctx->popArgDimension();
+        }
+    }
+
+    private function generateUnpackCodeForCurrentTarget(UnpackCompilationContext $ctx)
+    {
+        $this->elementType->generateUnpackCode($ctx, $this->bounds);
+    }
+
+    private function generateUnpackCodeForUnboundedArray(UnpackCompilationContext $ctx)
+    {
+        $ctx->beginConsumeRemainingData();
+        $this->generateUnpackCodeForCurrentTarget($ctx);
+        $ctx->endConsumeRemainingData();
+    }
+
+    private function generateUnpackCodeForBoundedArray(UnpackCompilationContext $ctx, int $count)
+    {
+        for ($i = 0; $i < $count; $i++) {
+            $ctx->pushTargetDimension($i);
+            $this->elementType->generateUnpackCode($ctx, $this->bounds);
+            $ctx->popTargetDimension();
         }
     }
 
@@ -64,6 +86,21 @@ final class ArrayOf implements VectorType
         }
 
         $this->generatePackCodeForBoundedArray($ctx, $count);
+    }
+
+    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    {
+        if ($count === null) {
+            $this->generateUnpackCodeForCurrentTarget($ctx);
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
+            $this->generateUnpackCodeForUnboundedArray($ctx);
+            return;
+        }
+
+        $this->generateUnpackCodeForBoundedArray($ctx, $count);
     }
 
     public function isFixedSize(): bool

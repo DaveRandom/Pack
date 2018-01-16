@@ -6,7 +6,7 @@ use const DaveRandom\Pack\UNBOUNDED;
 
 final class CompilationContext
 {
-    const RESULT_VAR_NAME = '$‽result‽';
+    const RESULT_VAR_NAME = '$‽r';
 
     private $argsVarName;
 
@@ -29,20 +29,20 @@ final class CompilationContext
     private function compilePendingPackSpecifiers()
     {
         $specifiers = [];
-        $args = [];
+        $dataArgs = [];
 
         while ($this->pendingPackSpecifiers->count() > 0) {
             list($specifier, $arg, $count) = $this->pendingPackSpecifiers->dequeue();
 
             if ($count === null) { // scalar
                 $specifiers[] = $specifier;
-                $args[] = $arg;
+                $dataArgs[] = $arg;
                 continue;
             }
 
             if ($count === UNBOUNDED) { // unbounded array
                 $specifiers[] = $specifier . '*';
-                $args[] = "...{$arg}";
+                $dataArgs[] = "...{$arg}";
                 continue;
             }
 
@@ -50,13 +50,37 @@ final class CompilationContext
             $specifiers[] = $specifier . $count;
 
             for ($i = 0; $i < $count; $i++) {
-                $args[] = "{$arg}[{$i}]";
+                $dataArgs[] = "{$arg}[{$i}]";
             }
         }
 
-        if (!empty($specifiers)) {
-            $this->pendingResultExpressions->push("\pack(" . \var_export(\implode('', $specifiers), true) . ", " . \implode(', ', $args) . ")");
+        $specifiersArg = \var_export(\implode('', $specifiers), true);
+        $this->pendingResultExpressions->push("\pack({$specifiersArg}, " . \implode(', ', $dataArgs) . ")");
+    }
+
+    private function compilePendingResultExpressions()
+    {
+        if ($this->hasPendingPackSpecifiers()) {
+            $this->compilePendingPackSpecifiers();
         }
+
+        $expressions = [];
+
+        while ($this->pendingResultExpressions->count() > 0) {
+            $expressions[] = $this->pendingResultExpressions->dequeue();
+        }
+
+        if (!empty($expressions)) {
+            $this->currentBlock->appendElement(new AssignmentOperation($expressions));
+        }
+    }
+
+    private function beginNewBlock(Block $block)
+    {
+        $this->compilePendingResultExpressions();
+
+        $this->blocks->push($block);
+        $this->currentBlock = $block;
     }
 
     private function endCurrentBlock()
@@ -76,34 +100,26 @@ final class CompilationContext
         $this->pendingResultExpressions = new \SplQueue();
         $this->blocks = new \SplStack();
 
-        $this->blocks->push($this->currentBlock = new Block());
+        $this->blocks->push($this->currentBlock = new RootBlock());
     }
 
-    public function appendSpecifier(string $specifier, int $count = null, string $arg = null)
+    public function hasPendingPackSpecifiers(): bool
+    {
+        return $this->pendingPackSpecifiers->count() > 0;
+    }
+
+    public function appendPackSpecifier(string $specifier, int $count = null, string $arg = null)
     {
         $this->pendingPackSpecifiers->enqueue([$specifier, $arg ?? $this->getCurrentArg(), $count]);
     }
 
     public function appendResult(string $expr)
     {
-        $this->compilePendingPackSpecifiers();
+        if ($this->hasPendingPackSpecifiers()) {
+            $this->compilePendingPackSpecifiers();
+        }
 
         $this->pendingResultExpressions->push($expr);
-    }
-
-    private function compilePendingResultExpressions()
-    {
-        $this->compilePendingPackSpecifiers();
-
-        $expressions = [];
-
-        while ($this->pendingResultExpressions->count() > 0) {
-            $expressions[] = $this->pendingResultExpressions->dequeue();
-        }
-
-        if (!empty($expressions)) {
-            $this->currentBlock->appendElement(new AssignmentOperation($expressions));
-        }
     }
 
     public function appendCode(string ...$statements)
@@ -157,24 +173,16 @@ final class CompilationContext
         return \implode(', ', $result);
     }
 
-    private function beginNewBlock(Block $block)
-    {
-        $this->compilePendingResultExpressions();
-
-        $this->blocks->push($block);
-        $this->currentBlock = $block;
-    }
-
     public function beginIterateCurrentArg()
     {
         $arg = $this->getCurrentArg();
 
         $iterationLevelId = ++$this->iterationDepth;
-        $keyVar = "\$‽k{$iterationLevelId}‽";
-        $valueVar = "\$‽v{$iterationLevelId}‽";
+        $keyVar = "\$‽k{$iterationLevelId}";
+        $valueVar = "\$‽v{$iterationLevelId}";
         $this->currentArgPath[] = $keyVar;
 
-        $this->beginNewBlock(new Block("foreach ({$arg} as {$keyVar} => {$valueVar})"));
+        $this->beginNewBlock(new InnerBlock("foreach ({$arg} as {$keyVar} => {$valueVar})"));
     }
 
     public function endIterateCurrentArg()

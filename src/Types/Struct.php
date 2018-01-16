@@ -3,11 +3,13 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
 use function DaveRandom\Pack\is_valid_name;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class Struct implements VectorType
 {
+    /** @var Type[] */
     private $elements = [];
     private $finite;
     private $size;
@@ -34,6 +36,31 @@ final class Struct implements VectorType
             $ctx->pushArgDimension($i);
             $this->generatePackCodeForCurrentArg($ctx);
             $ctx->popArgDimension();
+        }
+    }
+
+    private function generateUnpackCodeForCurrentTarget(UnpackCompilationContext $ctx)
+    {
+        foreach ($this->elements as $key => $element) {
+            $ctx->pushTargetDimension($key);
+            $element->generateUnpackCode($ctx);
+            $ctx->popTargetDimension();
+        }
+    }
+
+    private function generateUnpackCodeForUnboundedArray(UnpackCompilationContext $ctx)
+    {
+        $ctx->beginConsumeRemainingData();
+        $this->generateUnpackCodeForCurrentTarget($ctx);
+        $ctx->endConsumeRemainingData();
+    }
+
+    private function generateUnpackCodeForBoundedArray(UnpackCompilationContext $ctx, int $count)
+    {
+        for ($i = 0; $i < $count; $i++) {
+            $ctx->pushTargetDimension($i);
+            $this->generateUnpackCodeForCurrentTarget($ctx);
+            $ctx->popTargetDimension();
         }
     }
 
@@ -89,6 +116,21 @@ final class Struct implements VectorType
         }
 
         $this->generatePackCodeForBoundedArray($ctx, $count);
+    }
+
+    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    {
+        if ($count === null) {
+            $this->generateUnpackCodeForCurrentTarget($ctx);
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
+            $this->generateUnpackCodeForUnboundedArray($ctx);
+            return;
+        }
+
+        $this->generateUnpackCodeForBoundedArray($ctx, $count);
     }
 
     public function isFixedSize(): bool

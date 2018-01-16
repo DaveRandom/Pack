@@ -8,6 +8,7 @@ use DaveRandom\Pack\Types\Int16;
 use DaveRandom\Pack\Types\Int32;
 use DaveRandom\Pack\Types\IntegerType;
 use DaveRandom\Pack\Types\LengthPrefixedString;
+use DaveRandom\Pack\Types\NullTerminatedString;
 use DaveRandom\Pack\Types\Struct;
 use DaveRandom\Pack\Types\UInt16;
 use DaveRandom\Pack\Types\UInt32;
@@ -32,7 +33,9 @@ $struct = new Struct([
             'array2'  => new ArrayOf(new UInt8, 7),
         ])
     , 3),
-    'strings' => new ArrayOf(new LengthPrefixedString(new UInt8()))
+    'strings' => new ArrayOf(new LengthPrefixedString(new UInt16()), 3),
+//    'strings' => new ArrayOf(new NullTerminatedString()),
+//    'end' => new UInt8(),
 ]);
 
 $packer = (new Compiler)->compilePacker($struct);
@@ -81,4 +84,5 @@ var_dump($packer->pack([
         ],
     ],
     'strings' => ['1234567890', '1234567890', '1234567890'],
+    'end' => 65,
 ]));

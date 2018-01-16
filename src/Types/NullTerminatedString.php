@@ -5,31 +5,35 @@ namespace DaveRandom\Pack\Types;
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class NullTerminatedString
+final class NullTerminatedString implements Type
 {
-    private $lengthType;
-
-    public function __construct(IntegerType $lengthType)
-    {
-        $this->lengthType = $lengthType;
-    }
-
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
     {
         if ($count === null) {
-            $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
+            if ($ctx->hasPendingPackSpecifiers()) {
+                $ctx->appendPackSpecifier('a*x');
+            } else {
+                $ctx->appendResult('"{' . $ctx->getCurrentArg() . '}\x00"');
+            }
+
             return;
         }
 
         if ($count === UNBOUNDED) {
             $ctx->beginIterateCurrentArg();
-            $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
+            $ctx->appendResult('"{' . $ctx->getCurrentArg() . '}\x00"');
             $ctx->endIterateCurrentArg();
             return;
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $ctx->appendResult($ctx->getCurrentArg() . ' . "\x00"');
+            $arg = $ctx->getCurrentArg() . '[' . $i . ']';
+
+            if ($ctx->hasPendingPackSpecifiers()) {
+                $ctx->appendPackSpecifier('a*x', null, $arg);
+            } else {
+                $ctx->appendResult('"{' . $arg . '}\x00"');
+            }
         }
     }
 

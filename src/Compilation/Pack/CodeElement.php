@@ -4,5 +4,5 @@ namespace DaveRandom\Pack\Compilation\Pack;
 
 interface CodeElement
 {
-    public function getCode(int $indentation, int $increment, string $assignmentOperator): string;
+    public function getCode(int $indentation, int $increment): string;
 }

@@ -11,7 +11,7 @@ final class Statement implements CodeElement
         $this->statement = $statement;
     }
 
-    public function getCode(int $indentation, int $increment, string $assignmentOperator): string
+    public function getCode(int $indentation, int $increment): string
     {
         return \str_repeat(' ', $indentation) . $this->statement;
     }

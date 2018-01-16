@@ -2,67 +2,14 @@
 
 namespace DaveRandom\Pack\Compilation\Pack;
 
-final class Block implements CodeElement
+abstract class Block implements CodeElement
 {
-    private $header;
-    private $trailer;
-
-    /** @var CodeElement[] */
-    private $innerCodeElements = [];
-
-    public function __construct(string $header = null, string $trailer = null)
+    protected function generateAssignmentOperationCode(CodeElement $op, string $operator, int $indentation, int $increment): string
     {
-        $this->header = $header;
-        $this->trailer = $trailer;
+        return \str_repeat(' ', $indentation)
+            . CompilationContext::RESULT_VAR_NAME
+            . " {$operator} {$op->getCode($indentation, $increment)};\n";
     }
 
-    public function appendElement(CodeElement $element)
-    {
-        $this->innerCodeElements[] = $element;
-    }
-
-    public function isRoot()
-    {
-        return $this->header === null && $this->trailer === null;
-    }
-
-    public function getCode(int $indentation, int $increment, string $assignmentOperator): string
-    {
-        if ($this->isRoot() && \count($this->innerCodeElements) === 1 && $this->innerCodeElements[0] instanceof AssignmentOperation) {
-            return \str_repeat(' ', $indentation) . "return {$this->innerCodeElements[0]->getCode($indentation, $increment, '=')};\n";
-        }
-
-        if ($this->isRoot()) {
-            if (!$this->innerCodeElements[0] instanceof AssignmentOperation) {
-                \array_unshift($this->innerCodeElements, new AssignmentOperation(["''"]));
-            }
-
-            \array_push($this->innerCodeElements, new ReturnStatement());
-        }
-
-        $result = '';
-        $padding = \str_repeat(' ', $indentation);
-        $innerIndentation = $indentation;
-
-        if (!$this->isRoot()) {
-            $result .= $padding . \ltrim("{$this->header} {\n");
-            $innerIndentation += $increment;
-        }
-
-        foreach ($this->innerCodeElements as $element) {
-            if ($element instanceof AssignmentOperation) {
-                $result .= $padding . \str_repeat(' ', $increment) . CompilationContext::RESULT_VAR_NAME
-                    . " {$assignmentOperator} {$element->getCode($innerIndentation, $increment, $assignmentOperator)};\n";
-                $assignmentOperator = '.=';
-            } else {
-                $result .= \rtrim($element->getCode($innerIndentation, $increment, $assignmentOperator)) . "\n";
-            }
-        }
-
-        if (!$this->isRoot()) {
-            $result .= \rtrim("{$padding}} {$this->trailer}") . "\n";
-        }
-
-        return $result;
-    }
+    abstract public function appendElement(CodeElement $element);
 }
