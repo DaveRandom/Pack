@@ -10,7 +10,7 @@ final class InnerBlock extends Block
     /** @var CodeElement[] */
     private $innerCodeElements = [];
 
-    public function __construct(string $header = null, string $trailer = null)
+    public function __construct(string $header, string $trailer = null)
     {
         $this->header = $header;
         $this->trailer = $trailer;

@@ -101,14 +101,13 @@ abstract class NumericType implements ScalarType
             return;
         }
 
-        if ($count !== UNBOUNDED) {
-            $length = $size * $count;
-            $ctx->appendResult("\array_values(\unpack('{$this->specifier}{$count}', \implode('', \array_map('strrev', \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$length}), {$size})))))", $length);
+        if ($count === UNBOUNDED) {
+            $ctx->appendResultWithCount("\array_values(\unpack('{$this->specifier}*', \implode('', \array_map('strrev', \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}), {$size})))))", $size);
             return;
         }
 
-        // todo: unbounded array
-        throw new \Error('Not implemented');
+        $length = $size * $count;
+        $ctx->appendResult("\array_values(\unpack('{$this->specifier}{$count}', \implode('', \array_map('strrev', \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$length}), {$size})))))", $length);
     }
 
     public function isFixedSize(): bool

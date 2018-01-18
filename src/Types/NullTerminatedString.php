@@ -3,6 +3,7 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class NullTerminatedString implements Type
@@ -35,6 +36,12 @@ final class NullTerminatedString implements Type
                 $ctx->appendResult('"{' . $arg . '}\x00"');
             }
         }
+    }
+
+    public function generateUnpackCode(UnpackCompilationContext $context, int $count = null)
+    {
+        // todo
+        throw new \Error("Not implemented yet");
     }
 
     public function isFixedSize(): bool

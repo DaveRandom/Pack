@@ -74,7 +74,7 @@ return new class($type) implements \\' . Unpacker::class . '
         $ctx = new Unpack\CompilationContext($dataVarName, $offsetVarName, $countVarName);
         $type->generateUnpackCode($ctx, null);
 
-        return $ctx->getCode($indentation, $increment);
+        return $ctx->getCodeElements($indentation, $increment);
     }
 
     public function compileUnpacker(VectorType $type): Unpacker

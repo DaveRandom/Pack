@@ -4,6 +4,9 @@ namespace DaveRandom\Pack;
 
 use DaveRandom\Pack\Compilation\Compiler;
 use DaveRandom\Pack\Types\ArrayOf;
+use DaveRandom\Pack\Types\Int16;
+use DaveRandom\Pack\Types\Int32;
+use DaveRandom\Pack\Types\SpacePaddedString;
 use DaveRandom\Pack\Types\Struct;
 use DaveRandom\Pack\Types\UInt32;
 use DaveRandom\Pack\Types\UInt8;
@@ -11,15 +14,31 @@ use DaveRandom\Pack\Types\UInt8;
 require __DIR__ . '/../vendor/autoload.php';
 
 $struct = new Struct([
-    'one' => new UInt32(),
+    'one' => new Int32(),
     'two' => new ArrayOf(new UInt8(), 3),
     'three' => new Struct([
         'one' => new UInt32(),
-        'two' => new ArrayOf(new UInt8(), 3),
+        'two' => new ArrayOf(new Int16(), 8),
     ]),
+    'str' => new SpacePaddedString(16)
 ]);
 
-$unpacker = (new Compiler)->compileUnpacker($struct);
-$data = $unpacker->unpack("\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x00\x00\x00\x01\x02\x03\x04", 2, $consumed);
+$data = [
+    'one' => 65,
+    'two' => [66, 67, 68],
+    'three' => [
+        'one' => 69,
+        'two' => [70, 71, 72, 73, 74, 75, 76, 77],
+    ],
+    'str' => 'Hello World!',
+];
 
-var_dump($data['three']['two'][1], $consumed);
+$compiler = new Compiler;
+
+$packer = $compiler->compilePacker($struct);
+$packed = $packer->pack($data);
+var_dump($packed);
+
+$unpacker = $compiler->compileUnpacker($struct);
+$unpacked = $unpacker->unpack(\substr($packed, 0), 0, $consumed);
+var_dump($consumed, $unpacked === $data, $unpacked);

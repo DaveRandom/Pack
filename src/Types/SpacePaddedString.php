@@ -3,6 +3,7 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class SpacePaddedString implements VectorType
@@ -32,6 +33,19 @@ final class SpacePaddedString implements VectorType
         for ($i = 0; $i < $count; $i++) {
             $ctx->appendPackSpecifier($specifier, null, "{$arg}[{$i}]");
         }
+    }
+
+    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    {
+        $specifier = "A{$this->length}";
+
+        if ($count !== UNBOUNDED) {
+            $ctx->appendUnpackSpecifier($specifier, $this->length, $count);
+            return;
+        }
+
+        // todo
+        throw new \Error("Not implemented yet");
     }
 
     public function isFixedSize(): bool

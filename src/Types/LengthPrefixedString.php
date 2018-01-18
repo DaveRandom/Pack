@@ -3,6 +3,7 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class LengthPrefixedString implements VectorType
@@ -52,6 +53,12 @@ final class LengthPrefixedString implements VectorType
                 $ctx->appendResult($arg);
             }
         }
+    }
+
+    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    {
+        // todo
+        throw new \Error("Not implemented yet");
     }
 
     public function isFixedSize(): bool
