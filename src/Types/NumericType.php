@@ -3,8 +3,8 @@
 namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Statement;
 use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
-use DaveRandom\Pack\Compilation\Unpack\Statement;
 use DaveRandom\Pack\TypeCodes;
 use const DaveRandom\Pack\UNBOUNDED;
 
