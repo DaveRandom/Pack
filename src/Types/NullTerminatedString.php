@@ -10,11 +10,14 @@ final class NullTerminatedString implements Type
 {
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)
     {
+        static $packSpecifier = 'Z*';
+        static $literalFormat = '"{%s}\x00"';
+
         if ($count === null) {
             if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier('a*x');
+                $ctx->appendPackSpecifier($packSpecifier);
             } else {
-                $ctx->appendResult('"{' . $ctx->getCurrentArg() . '}\x00"');
+                $ctx->appendResult(\sprintf($literalFormat, $ctx->getCurrentArg()));
             }
 
             return;
@@ -22,18 +25,18 @@ final class NullTerminatedString implements Type
 
         if ($count === UNBOUNDED) {
             $ctx->beginIterateCurrentArg();
-            $ctx->appendResult('"{' . $ctx->getCurrentArg() . '}\x00"');
+            $ctx->appendResult(\sprintf($literalFormat, $ctx->getCurrentArg()));
             $ctx->endIterateCurrentArg();
             return;
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $arg = $ctx->getCurrentArg() . '[' . $i . ']';
+            $arg = "{$ctx->getCurrentArg()}[{$i}]";
 
             if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier('a*x', null, $arg);
+                $ctx->appendPackSpecifier($packSpecifier, null, $arg);
             } else {
-                $ctx->appendResult('"{' . $arg . '}\x00"');
+                $ctx->appendResult(\sprintf($literalFormat, $arg));
             }
         }
     }

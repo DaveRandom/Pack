@@ -37,15 +37,21 @@ final class NullPaddedString implements VectorType
 
     public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
     {
-        $specifier = "a{$this->length}";
+        // Use 'Z' to unpack instead of 'a' because 'a' does not strip trailing nulls
+        $specifier = "Z{$this->length}";
 
-        if ($count !== UNBOUNDED) {
+        if ($count === null) {
             $ctx->appendUnpackSpecifier($specifier, $this->length, $count);
             return;
         }
 
-        // todo
-        throw new \Error("Not implemented yet");
+        if ($count === UNBOUNDED) {
+            $ctx->appendResultWithCount("\array_map(function(\$s) { return \unpack('{$specifier}', \$s); }, \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}), {$this->length}))", $this->length);
+            return;
+        }
+
+        $length = $this->length * $count;
+        $ctx->appendResult("\array_map(function(\$s) { return \unpack('{$specifier}', \$s); }, \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$length}), {$this->length}))", $length);
     }
 
     public function isFixedSize(): bool

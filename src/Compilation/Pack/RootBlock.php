@@ -2,47 +2,52 @@
 
 namespace DaveRandom\Pack\Compilation\Pack;
 
+use DaveRandom\Pack\Compilation\Block;
+
 final class RootBlock extends Block
 {
-    /** @var CodeElement[] */
-    private $elements = [];
+    private $resultVarName;
 
-    public function appendElement(CodeElement $element)
+    public function __construct(string $resultVarName)
     {
-        $this->elements[] = $element;
+        $this->resultVarName = $resultVarName;
     }
 
     public function getCode(int $indentation, int $increment): string
     {
-        if (\count($this->elements) === 1 && $this->elements[0] instanceof AssignmentOperation) {
-            return \str_repeat(' ', $indentation) . "return {$this->elements[0]->getCode($indentation, $increment)};\n";
+        $firstElement = $this->codeElements[0];
+
+        if (\count($this->codeElements) === 1 && $firstElement instanceof AssignmentOperation) {
+            return $firstElement->getCodeAsReturn($indentation, $increment, false);
         }
 
         $result = '';
         $padding = \str_repeat(' ', $indentation);
-        $operator = '=';
+        $assignments = 0;
 
-        if (!$this->elements[0] instanceof AssignmentOperation) {
-            $result .= $padding . CompilationContext::RESULT_VAR_NAME . " = '';";
-            $operator = '.=';
+        // if first element is not an assign op, declare the result var at the top of the function
+        if (!$firstElement instanceof AssignmentOperation) {
+            $result .= "{$padding}{$this->resultVarName} = '';";
+            $assignments++;
         }
 
-        for ($i = 0, $l = \count($this->elements) - 1; $i < $l; $i++) {
-            if (!$this->elements[$i] instanceof AssignmentOperation) {
-                $result .= \rtrim($this->elements[$i]->getCode($indentation, $increment)) . "\n";
-                continue;
-            }
-
-            $result .= $this->generateAssignmentOperationCode($this->elements[$i], $operator, $indentation, $increment);
-            $operator = '.=';
+        // loop all elements except the last and generate code for them
+        for ($i = 0, $element = $this->codeElements[$i], $l = \count($this->codeElements) - 1; $i < $l; $element = $this->codeElements[++$i]) {
+            $result .= $element instanceof AssignmentOperation
+                ? $element->getCodeAsAssignment($indentation, $increment, $assignments++ ? '.=' : '=')
+                : $element->getCode($indentation, $increment);
         }
 
-        if ($this->elements[$i] instanceof AssignmentOperation) {
-            return $result . $padding . 'return ' . CompilationContext::RESULT_VAR_NAME . ' . '
-                . $this->elements[$i]->getCode($indentation, $increment);
+        $lastElement = $this->codeElements[$i];
+
+        if ($lastElement instanceof AssignmentOperation) {
+            return $result . $lastElement->getCodeAsReturn($indentation, $increment, true);
         }
 
-        return $result . \rtrim($this->elements[$i]->getCode($indentation, $increment)) . "\n"
-                . $padding . 'return ' . CompilationContext::RESULT_VAR_NAME . ';';
+        // If the last element was not an assignment, explicitly return the result var
+        $result .= $this->codeElements[$i]->getCode($indentation, $increment) . "\n";
+        $result .= "{$padding}return {$this->resultVarName};\n";
+
+        return $result;
     }
 }

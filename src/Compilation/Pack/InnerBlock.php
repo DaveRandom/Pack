@@ -2,23 +2,21 @@
 
 namespace DaveRandom\Pack\Compilation\Pack;
 
+use DaveRandom\Pack\Compilation\Block;
+use DaveRandom\Pack\Compilation\CodeElement;
+
 final class InnerBlock extends Block
 {
     private $header;
     private $trailer;
 
     /** @var CodeElement[] */
-    private $innerCodeElements = [];
+    private $codeElements = [];
 
-    public function __construct(string $header, string $trailer = null)
+    public function __construct(string $header, string $trailer = '')
     {
-        $this->header = $header;
-        $this->trailer = $trailer;
-    }
-
-    public function appendElement(CodeElement $element)
-    {
-        $this->innerCodeElements[] = $element;
+        $this->header = \trim($header);
+        $this->trailer = \trim($trailer);
     }
 
     public function getCode(int $indentation, int $increment): string
@@ -26,14 +24,14 @@ final class InnerBlock extends Block
         $padding = \str_repeat(' ', $indentation);
         $indentation += $increment;
 
-        $result = $padding . \ltrim("{$this->header} {\n");
+        $result = "{$padding}{$this->header} {\n";
 
-        foreach ($this->innerCodeElements as $element) {
+        foreach ($this->codeElements as $element) {
             $result .= $element instanceof AssignmentOperation
-                ? $this->generateAssignmentOperationCode($element, '.=', $indentation, $increment)
-                : \rtrim($element->getCode($indentation, $increment)) . "\n";
+                ? $element->getCodeAsAssignment($indentation, $increment, '.=')
+                : $element->getCode($indentation, $increment);
         }
 
-        return $result . \rtrim("{$padding}} {$this->trailer}") . "\n";
+        return $result . $padding . \rtrim("} {$this->trailer}") . "\n";
     }
 }

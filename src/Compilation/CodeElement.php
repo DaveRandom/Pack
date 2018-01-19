@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace DaveRandom\Pack\Compilation\Pack;
+namespace DaveRandom\Pack\Compilation;
 
 interface CodeElement
 {

@@ -4,6 +4,7 @@ namespace DaveRandom\Pack\Types;
 
 use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
 use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\Statement;
 use DaveRandom\Pack\TypeCodes;
 use const DaveRandom\Pack\UNBOUNDED;
 
@@ -62,6 +63,11 @@ abstract class NumericType implements ScalarType
         }
 
         $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$expr}))");
+    }
+
+    public function generateUnpackCodeForSingleValueAtCurrentOffset(UnpackCompilationContext $ctx, string $target)
+    {
+        $ctx->appendCodeElements(new Statement("{$target} = \unpack('{$this->specifier}', {$ctx->getData()}, {$ctx->getOffset()});"));
     }
 
     public function generatePackCode(PackCompilationContext $ctx, int $count = null)

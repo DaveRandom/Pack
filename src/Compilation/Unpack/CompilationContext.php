@@ -2,6 +2,9 @@
 
 namespace DaveRandom\Pack\Compilation\Unpack;
 
+use DaveRandom\Pack\Compilation\Block;
+use DaveRandom\Pack\Compilation\CodeElement;
+use DaveRandom\Pack\Compilation\Statement;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class CompilationContext
@@ -13,14 +16,14 @@ final class CompilationContext
     private $offsetVarName;
     private $countVarName;
 
-    /** @var CodeElement[] */
-    private $codeElements = [];
-
     private $currentTargetPath = [];
 
     private $pendingUnpackSpecifiers;
 
     private $totalSize = 0;
+
+    private $currentBlock;
+    private $blocks;
 
     private function compilePendingUnpackSpecifiers()
     {
@@ -73,11 +76,32 @@ final class CompilationContext
         $specifierString = \var_export(\implode('/', $specifiers), true);
         $this->totalSize += $consumed;
 
-        $this->appendCodeElements(
+        $this->currentBlock->appendCodeElements(
             $this->generateLengthCheckBlock($consumed, $firstTargetPath),
             new Statement("\$‽u = \unpack({$specifierString}, {$this->dataVarName}, {$this->offsetVarName});"),
             ...$codeElements
         );
+    }
+
+    private function beginNewBlock(Block $block)
+    {
+        if ($this->hasPendingUnpackSpecifiers()) {
+            $this->compilePendingUnpackSpecifiers();
+        }
+
+        $this->blocks->push($block);
+        $this->currentBlock = $block;
+    }
+
+    private function endCurrentBlock()
+    {
+        if ($this->hasPendingUnpackSpecifiers()) {
+            $this->compilePendingUnpackSpecifiers();
+        }
+
+        $innerBlock = $this->blocks->pop();
+        $this->currentBlock = $this->blocks->top();
+        $this->currentBlock->appendElement($innerBlock);
     }
 
     public function __construct(string $dataVarName, string $offsetVarName, string $countVarName)
@@ -87,6 +111,12 @@ final class CompilationContext
         $this->countVarName = $countVarName;
 
         $this->pendingUnpackSpecifiers = new \SplQueue();
+        $this->blocks = new \SplStack();
+
+        $this->currentBlock = (new RootBlock)->appendCodeElements(
+            new Statement(self::RESULT_VAR_NAME . " = [];"),
+            new Statement(self::STRLEN_VAR_NAME . " = \strlen({$this->dataVarName});")
+        );
     }
 
     public function hasPendingUnpackSpecifiers(): bool
@@ -170,9 +200,7 @@ final class CompilationContext
             $this->compilePendingUnpackSpecifiers();
         }
 
-        foreach ($elements as $element) {
-            $this->codeElements[] = $element;
-        }
+        $this->currentBlock->appendCodeElements(...$elements);
     }
 
     public function beginConsumeRemainingData()
@@ -197,24 +225,15 @@ final class CompilationContext
 
     public function getCodeElements(int $indentation, int $increment): string
     {
-        if ($this->hasPendingUnpackSpecifiers()) {
-            $this->compilePendingUnpackSpecifiers();
+        while ($this->blocks->count() > 1) {
+            $this->endCurrentBlock();
         }
 
-        $result
-            = (new Statement(self::RESULT_VAR_NAME . " = [];"))->getCode($indentation, $increment)
-            . (new Statement(self::STRLEN_VAR_NAME . " = \strlen({$this->dataVarName});"))->getCode($indentation, $increment)
-        ;
+        $this->currentBlock->appendCodeElements(
+            new Statement("{$this->countVarName} += {$this->totalSize};"),
+            new Statement("return " . self::RESULT_VAR_NAME . ";")
+        );
 
-        foreach ($this->codeElements as $element) {
-            $result .= $element->getCode($indentation, $increment);
-        }
-
-        $result
-            .= (new Statement("{$this->countVarName} += {$this->totalSize};"))->getCode($indentation, $increment)
-            . (new Statement("return " . self::RESULT_VAR_NAME . ";"))->getCode($indentation, $increment)
-        ;
-
-        return $result;
+        return $this->currentBlock->getCode($indentation, $increment);
     }
 }

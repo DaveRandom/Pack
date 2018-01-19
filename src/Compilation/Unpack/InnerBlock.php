@@ -2,27 +2,17 @@
 
 namespace DaveRandom\Pack\Compilation\Unpack;
 
-final class InnerBlock implements Block
+use DaveRandom\Pack\Compilation\Block;
+
+final class InnerBlock extends Block
 {
     private $header;
     private $trailer;
 
-    /** @var CodeElement[] */
-    private $codeElements = [];
-
-    public function __construct(string $header, string $trailer = null)
+    public function __construct(string $header, string $trailer = '')
     {
-        $this->header = $header;
-        $this->trailer = $trailer;
-    }
-
-    public function appendCodeElements(CodeElement ...$elements): self
-    {
-        foreach ($elements as $element) {
-            $this->codeElements[] = $element;
-        }
-
-        return $this;
+        $this->header = \trim($header);
+        $this->trailer = \trim($trailer);
     }
 
     public function getCode(int $indentation, int $increment): string
@@ -36,6 +26,6 @@ final class InnerBlock implements Block
             $result .= $element->getCode($innerIndentation, $increment);
         }
 
-        return $result . "{$padding}}" . \ltrim(' ' . $this->trailer) . "\n";
+        return $result . "{$padding}}" . \rtrim(' ' . $this->trailer) . "\n";
     }
 }

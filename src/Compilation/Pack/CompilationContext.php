@@ -2,6 +2,8 @@
 
 namespace DaveRandom\Pack\Compilation\Pack;
 
+use DaveRandom\Pack\Compilation\Block;
+use DaveRandom\Pack\Compilation\CodeElement;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class CompilationContext
@@ -71,7 +73,7 @@ final class CompilationContext
         }
 
         if (!empty($expressions)) {
-            $this->currentBlock->appendElement(new AssignmentOperation($expressions));
+            $this->currentBlock->appendCodeElements(new AssignmentOperation(self::RESULT_VAR_NAME, $expressions));
         }
     }
 
@@ -100,7 +102,8 @@ final class CompilationContext
         $this->pendingResultExpressions = new \SplQueue();
         $this->blocks = new \SplStack();
 
-        $this->blocks->push($this->currentBlock = new RootBlock());
+        $this->currentBlock = new RootBlock(self::RESULT_VAR_NAME);
+        $this->blocks->push($this->currentBlock);
     }
 
     public function hasPendingPackSpecifiers(): bool
@@ -122,13 +125,11 @@ final class CompilationContext
         $this->pendingResultExpressions->push($expr);
     }
 
-    public function appendCode(string ...$statements)
+    public function appendCodeElements(CodeElement ...$elements)
     {
         $this->compilePendingResultExpressions();
 
-        foreach ($statements as $statement) {
-            $this->currentBlock->appendElement(new Statement($statement));
-        }
+        $this->currentBlock->appendCodeElements(...$elements);
     }
 
     public function getCurrentArgPath(): array

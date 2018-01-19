@@ -20,7 +20,7 @@ $struct = new Struct([
         'one' => new UInt32(),
         'two' => new ArrayOf(new Int16(), 8),
     ]),
-    'str' => new SpacePaddedString(16)
+    'str' => new ArrayOf(new SpacePaddedString(16), 6)
 ]);
 
 $data = [
@@ -30,7 +30,7 @@ $data = [
         'one' => 69,
         'two' => [70, 71, 72, 73, 74, 75, 76, 77],
     ],
-    'str' => 'Hello World!',
+    'str' => ['Hello', 'World!', 'Nice', 'To', 'Be', 'Here'],
 ];
 
 $compiler = new Compiler;

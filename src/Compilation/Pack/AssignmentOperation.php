@@ -2,24 +2,34 @@
 
 namespace DaveRandom\Pack\Compilation\Pack;
 
+use DaveRandom\Pack\Compilation\CodeElement;
+
 final class AssignmentOperation implements CodeElement
 {
+    private $varName;
     private $expressions;
 
-    public function __construct(array $expressions)
+    public function __construct(string $varName, array $expressions)
     {
+        $this->varName = $varName;
         $this->expressions = $expressions;
     }
 
-    public function getCode(int $indentation, int $increment): string
+    public function getCode(int $indentation, int $increment, string $target = ''): string
     {
-        $result = $this->expressions[0];
-        $padding = \str_repeat(' ', $indentation + $increment);
+        $padding = \str_repeat(' ', $indentation);
+        $continuationPadding = $padding . \str_repeat(' ', $increment);
 
-        for ($i = 1; isset($this->expressions[$i]); $i++) {
-            $result .= "\n{$padding}. {$this->expressions[$i]}";
-        }
+        return "{$padding}{$target} " . \implode("\n{$continuationPadding}. ", $this->expressions) . ";\n";
+    }
 
-        return $result;
+    public function getCodeAsAssignment(int $indentation, int $increment, string $operator): string
+    {
+        return $this->getCode($indentation, $increment, "{$this->varName} {$operator}");
+    }
+
+    public function getCodeAsReturn(int $indentation, int $increment, bool $withResult): string
+    {
+        return $this->getCode($indentation, $increment, $withResult ? "return {$this->varName} ." : 'return');
     }
 }
