@@ -6,7 +6,7 @@ use DaveRandom\Pack\Compilation\Compiler;
 use DaveRandom\Pack\Types\ArrayOf;
 use DaveRandom\Pack\Types\Int16;
 use DaveRandom\Pack\Types\Int32;
-use DaveRandom\Pack\Types\SpacePaddedString;
+use DaveRandom\Pack\Types\NullTerminatedString;
 use DaveRandom\Pack\Types\Struct;
 use DaveRandom\Pack\Types\UInt32;
 use DaveRandom\Pack\Types\UInt8;
@@ -20,8 +20,8 @@ $struct = new ArrayOf(new Struct([
         'one' => new UInt32(),
         'two' => new ArrayOf(new Int16(), 8),
     ]),
-    'str' => new ArrayOf(new SpacePaddedString(16), 6)
-]));
+    'str' => new ArrayOf(new NullTerminatedString())
+]), 1);
 
 $data = [
     [

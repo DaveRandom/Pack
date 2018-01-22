@@ -43,8 +43,21 @@ final class NullTerminatedString implements Type
 
     public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
-        // todo
-        throw new \Error("Not implemented yet");
+        if ($count === null) {
+            $method->appendResultWithSizeExpr("\unpack('Z*', {$method->getData()}, {$method->getOffset()})[1]", "\strlen({$method->getCurrentTarget()}) + 1");
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
+            $method->beginConsumeRemainingData();
+            $method->appendResultWithSizeExpr("\unpack('Z*', {$method->getData()}, {$method->getOffset()})[1]", "\strlen({$method->getCurrentTarget()}) + 1");
+            $method->endConsumeRemainingData();
+            return;
+        }
+
+        $method->beginIterateCounter($count, true);
+        $method->appendResultWithSizeExpr("\unpack('Z*', {$method->getData()}, {$method->getOffset()})[1]", "\strlen({$method->getCurrentTarget()}) + 1");
+        $method->endIterateCounter();
     }
 
     public function isFixedSize(): bool

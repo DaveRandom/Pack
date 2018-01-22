@@ -67,7 +67,10 @@ abstract class NumericType implements ScalarType
 
     public function generateUnpackCodeForSingleValueAtCurrentOffset(UnpackMethod $method, string $target)
     {
-        $method->appendCodeElements(new Statement("{$target} = \unpack('{$this->specifier}', {$method->getData()}, {$method->getOffset()});"));
+        $method->appendLengthCheck($this->getSize());
+        $method->appendCodeElements(new Statement("{$target} = \unpack('{$this->specifier}', {$method->getData()}, {$method->getOffset()})[1];"));
+        $method->advanceDataOffset($this->getSize());
+        $method->addSize($this->getSize());
     }
 
     public function generatePackCode(PackMethod $method, int $count = null)

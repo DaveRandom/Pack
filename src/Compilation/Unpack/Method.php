@@ -22,6 +22,7 @@ final class Method implements Compilable
 
     private $currentBlock;
     private $blocks;
+    private $counterVarStack;
 
     private function compilePendingUnpackSpecifiers()
     {
@@ -74,8 +75,8 @@ final class Method implements Compilable
         $specifierString = \var_export(\implode('/', $specifiers), true);
         $this->currentBlock->addSize($consumed);
 
+        $this->appendLengthCheck($consumed, $firstTargetPath);
         $this->currentBlock->appendCodeElements(
-            $this->generateLengthCheckBlock($consumed, $firstTargetPath),
             new Statement("\$‽u = \unpack({$specifierString}, {$this->dataVarName}, {$this->offsetVarName});"),
             ...$codeElements
         );
@@ -83,7 +84,6 @@ final class Method implements Compilable
 
     private function beginNewBlock(Block $block)
     {
-        var_dump('beginNewBlock', $this->blocks->count());
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
         }
@@ -94,7 +94,6 @@ final class Method implements Compilable
 
     private function endCurrentBlock()
     {
-        var_dump('endCurrentBlock', $this->blocks->count());
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
         }
@@ -102,6 +101,25 @@ final class Method implements Compilable
         $innerBlock = $this->blocks->pop();
         $this->currentBlock = $this->blocks->top();
         $this->currentBlock->appendCodeElements($innerBlock);
+    }
+
+    private function getCounterVar(bool $pushTargetDimension)
+    {
+        $result = '$‽i' . $this->counterVarStack->count();
+        $this->counterVarStack->push($pushTargetDimension);
+
+        if ($pushTargetDimension) {
+            $this->currentTargetPath[] = $result;
+        }
+
+        return $result;
+    }
+
+    private function releaseCounterVar()
+    {
+        if ($this->counterVarStack->pop()) {
+            \array_pop($this->currentTargetPath);
+        }
     }
 
     public function __construct(string $dataVarName, string $offsetVarName, string $countVarName)
@@ -112,6 +130,7 @@ final class Method implements Compilable
 
         $this->pendingUnpackSpecifiers = new \SplQueue();
         $this->blocks = new \SplStack();
+        $this->counterVarStack = new \SplStack();
 
         $this->blocks->push($this->currentBlock = (new RootBlock($this->countVarName))->appendCodeElements(
             new Statement(self::RESULT_VAR_NAME . " = [];"),
@@ -151,17 +170,19 @@ final class Method implements Compilable
         $this->pendingUnpackSpecifiers->push([$specifier, $size, $count, $targetPath ?? $this->currentTargetPath]);
     }
 
-    private function generateLengthCheckBlock(int $length, array $targetPath = null): Block
+    public function appendLengthCheck($expr, array $targetPath = null)
     {
         $target = \implode(" . '/' . ", $targetPath ?? $this->currentTargetPath);
 
-        return (new InnerBlock($this->countVarName, "if ({$this->offsetVarName} + {$length} > " . self::STRLEN_VAR_NAME . ")"))
-            ->appendCodeElements(new Statement(
-                "throw new \InvalidArgumentException(\sprintf("
-                . "'Insufficient data input to decode elements from path %s at offset %d: need %d, have %d',"
-                . " {$target}, {$this->offsetVarName}, {$length}, " . self::STRLEN_VAR_NAME . " - {$this->offsetVarName}"
-                . "));"
-            ));
+        $this->appendCodeElements(
+            (new InnerBlock($this->countVarName, "if ({$this->offsetVarName} + ({$expr}) > " . self::STRLEN_VAR_NAME . ")"))
+                ->appendCodeElements(new Statement(
+                    "throw new \InvalidArgumentException(\sprintf("
+                    . "'Insufficient data input to decode elements from path %s at offset %d: need %d, have %d',"
+                    . " {$target}, {$this->offsetVarName}, {$expr}, " . self::STRLEN_VAR_NAME . " - {$this->offsetVarName}"
+                    . "));"
+                ))
+        );
     }
 
     public function appendResult(string $expr, int $size)
@@ -170,26 +191,26 @@ final class Method implements Compilable
             $this->compilePendingUnpackSpecifiers();
         }
 
-        $this->appendCodeElements(
-            $this->generateLengthCheckBlock($size),
-            new Statement("{$this->getCurrentTarget()} = {$expr};"),
-            new Statement("{$this->offsetVarName} += {$size};")
-        );
+        $this->appendLengthCheck($size);
+        $this->appendCodeElements(new Statement("{$this->getCurrentTarget()} = {$expr};"));
+        $this->advanceDataOffset($size);
 
         $this->currentBlock->addSize($size);
     }
 
     public function appendResultWithCount(string $expr, int $size)
     {
+        $this->appendResultWithSizeExpr($expr, "\count({$this->getCurrentTarget()}) * {$size}");
+    }
+
+    public function appendResultWithSizeExpr(string $expr, string $sizeExpr)
+    {
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
         }
 
-        $this->appendCodeElements(
-            new Statement("{$this->getCurrentTarget()} = {$expr};"),
-            new Statement("{$this->offsetVarName} += \count({$this->getCurrentTarget()}) * {$size};"),
-            new Statement("{$this->countVarName} += \count({$this->getCurrentTarget()}) * {$size};")
-        );
+        $this->appendCodeElements(new Statement("{$this->getCurrentTarget()} = {$expr};"));
+        $this->advanceDataOffset($sizeExpr, true);
     }
 
     public function appendCodeElements(Compilable ...$elements)
@@ -201,19 +222,41 @@ final class Method implements Compilable
         $this->currentBlock->appendCodeElements(...$elements);
     }
 
+    public function advanceDataOffset($expr, bool $advanceCount = false)
+    {
+        $this->appendCodeElements(new Statement("{$this->offsetVarName} += {$expr};"));
+
+        if ($advanceCount) {
+            $this->appendCodeElements(new Statement("{$this->countVarName} += {$expr};"));
+        }
+    }
+
+    public function beginIterateCounter(int $iterations, bool $pushTargetDimension)
+    {
+        $counterVarName = $this->getCounterVar($pushTargetDimension);
+        $loopHead = \sprintf('for (%1$s = 0; %1$s < %2$d; %1$s++)', $counterVarName, $iterations);
+
+        $this->beginNewBlock(new InnerBlock($this->countVarName, $loopHead));
+    }
+
+    public function endIterateCounter()
+    {
+        $this->endCurrentBlock();
+        $this->releaseCounterVar();
+    }
+
     public function beginConsumeRemainingData()
     {
-        $counterVarName = '$‽j';
+        $counterVarName = $this->getCounterVar(true);
         $loopHead = \sprintf('for (%1$s = 0; %2$s < %3$s; %1$s++)', $counterVarName, $this->offsetVarName, self::STRLEN_VAR_NAME);
 
         $this->beginNewBlock(new InnerBlock($this->countVarName, $loopHead));
-        $this->currentTargetPath[] = $counterVarName;
     }
 
     public function endConsumeRemainingData()
     {
         $this->endCurrentBlock();
-        \array_pop($this->currentTargetPath);
+        $this->releaseCounterVar();
     }
 
     public function pushTargetDimension($key)
@@ -224,6 +267,11 @@ final class Method implements Compilable
     public function popTargetDimension()
     {
         return \array_pop($this->currentTargetPath);
+    }
+
+    public function addSize(int $size)
+    {
+        $this->currentBlock->addSize($size);
     }
 
     public function compile(int $indentation, int $increment): string

@@ -57,8 +57,33 @@ final class LengthPrefixedString implements VectorType
 
     public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
-        // todo
-        throw new \Error("Not implemented yet");
+        if ($count === null) {
+            $this->lengthType->generateUnpackCodeForSingleValueAtCurrentOffset($method, '$length');
+            $method->appendLengthCheck('$length');
+            $method->appendResultWithSizeExpr("\unpack('a' . \$length, {$method->getData()}, {$method->getOffset()})[1]", '$length');
+
+            return;
+        }
+
+        if ($count === UNBOUNDED) {
+            $method->beginConsumeRemainingData();
+
+            $this->lengthType->generateUnpackCodeForSingleValueAtCurrentOffset($method, '$length');
+            $method->appendLengthCheck('$length');
+            $method->appendResultWithSizeExpr("\unpack('a' . \$length, {$method->getData()}, {$method->getOffset()})[1]", '$length');
+
+            $method->endConsumeRemainingData();
+
+            return;
+        }
+
+        $method->beginIterateCounter($count, true);
+
+        $this->lengthType->generateUnpackCodeForSingleValueAtCurrentOffset($method, '$length');
+        $method->appendLengthCheck('$length');
+        $method->appendResultWithSizeExpr("\unpack('a' . \$length, {$method->getData()}, {$method->getOffset()})[1]", '$length');
+
+        $method->endIterateCounter();
     }
 
     public function isFixedSize(): bool
