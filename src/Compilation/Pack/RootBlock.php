@@ -27,7 +27,7 @@ final class RootBlock extends Block
 
         // if first element is not an assign op, declare the result var at the top of the function
         if (!$firstElement instanceof AssignmentOperation) {
-            $result .= "{$padding}{$this->resultVarName} = '';";
+            $result .= "{$padding}{$this->resultVarName} = '';\n";
             $assignments++;
         }
 
@@ -45,7 +45,7 @@ final class RootBlock extends Block
         }
 
         // If the last element was not an assignment, explicitly return the result var
-        $result .= $this->codeElements[$i]->getCode($indentation, $increment) . "\n";
+        $result .= $this->codeElements[$i]->getCode($indentation, $increment);
         $result .= "{$padding}return {$this->resultVarName};\n";
 
         return $result;

@@ -3,15 +3,11 @@
 namespace DaveRandom\Pack\Compilation\Pack;
 
 use DaveRandom\Pack\Compilation\Block;
-use DaveRandom\Pack\Compilation\CodeElement;
 
 final class InnerBlock extends Block
 {
     private $header;
     private $trailer;
-
-    /** @var CodeElement[] */
-    private $codeElements = [];
 
     public function __construct(string $header, string $trailer = '')
     {

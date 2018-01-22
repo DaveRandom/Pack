@@ -91,7 +91,7 @@ final class CompilationContext
 
         $innerBlock = $this->blocks->pop();
         $this->currentBlock = $this->blocks->top();
-        $this->currentBlock->appendElement($innerBlock);
+        $this->currentBlock->appendCodeElements($innerBlock);
     }
 
     public function __construct(string $argsVarName)
