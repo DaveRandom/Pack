@@ -2,9 +2,9 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\Method as PackMethod;
 use DaveRandom\Pack\Compilation\Statement;
-use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Unpack\Method as UnpackMethod;
 use DaveRandom\Pack\TypeCodes;
 use const DaveRandom\Pack\UNBOUNDED;
 
@@ -55,65 +55,65 @@ abstract class NumericType implements ScalarType
         $this->reverse = $reverse;
     }
 
-    public function generatePackCodeForExpression(PackCompilationContext $ctx, string $expr)
+    public function generatePackCodeForExpression(PackMethod $method, string $expr)
     {
         if (!$this->reverse) {
-            $ctx->appendPackSpecifier($this->specifier, null, $expr);
+            $method->appendPackSpecifier($this->specifier, null, $expr);
             return;
         }
 
-        $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$expr}))");
+        $method->appendResult("\strrev(\pack('{$this->specifier}', {$expr}))");
     }
 
-    public function generateUnpackCodeForSingleValueAtCurrentOffset(UnpackCompilationContext $ctx, string $target)
+    public function generateUnpackCodeForSingleValueAtCurrentOffset(UnpackMethod $method, string $target)
     {
-        $ctx->appendCodeElements(new Statement("{$target} = \unpack('{$this->specifier}', {$ctx->getData()}, {$ctx->getOffset()});"));
+        $method->appendCodeElements(new Statement("{$target} = \unpack('{$this->specifier}', {$method->getData()}, {$method->getOffset()});"));
     }
 
-    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
+    public function generatePackCode(PackMethod $method, int $count = null)
     {
         if (!$this->reverse) {
-            $ctx->appendPackSpecifier($this->specifier, $count);
+            $method->appendPackSpecifier($this->specifier, $count);
             return;
         }
 
-        $arg = $ctx->getCurrentArg();
+        $arg = $method->getCurrentArg();
         $size = $this->width / 8;
 
         if ($count === null) {
-            $ctx->appendResult("\strrev(\pack('{$this->specifier}', {$arg}))");
+            $method->appendResult("\strrev(\pack('{$this->specifier}', {$arg}))");
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...{$arg}), {$size})))");
+            $method->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}*', ...{$arg}), {$size})))");
             return;
         }
 
-        $ctx->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$ctx->getCurrentArgAsBoundedArrayArgList($count)}), {$size})))");
+        $method->appendResult("\implode('', \array_map('strrev', \str_split(\pack('{$this->specifier}{$count}', {$method->getCurrentArgAsBoundedArrayArgList($count)}), {$size})))");
     }
 
-    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
         $size = $this->width / 8;
 
         if (!$this->reverse) {
-            $ctx->appendUnpackSpecifier($this->specifier, $size, $count);
+            $method->appendUnpackSpecifier($this->specifier, $size, $count);
             return;
         }
 
         if ($count === null) {
-            $ctx->appendResult("\unpack('{$this->specifier}', \strrev(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$size})))[1]", $size);
+            $method->appendResult("\unpack('{$this->specifier}', \strrev(\substr({$method->getData()}, {$method->getOffset()}, {$size})))[1]", $size);
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $ctx->appendResultWithCount("\array_values(\unpack('{$this->specifier}*', \implode('', \array_map('strrev', \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}), {$size})))))", $size);
+            $method->appendResultWithCount("\array_values(\unpack('{$this->specifier}*', \implode('', \array_map('strrev', \str_split(\substr({$method->getData()}, {$method->getOffset()}), {$size})))))", $size);
             return;
         }
 
         $length = $size * $count;
-        $ctx->appendResult("\array_values(\unpack('{$this->specifier}{$count}', \implode('', \array_map('strrev', \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$length}), {$size})))))", $length);
+        $method->appendResult("\array_values(\unpack('{$this->specifier}{$count}', \implode('', \array_map('strrev', \str_split(\substr({$method->getData()}, {$method->getOffset()}, {$length}), {$size})))))", $length);
     }
 
     public function isFixedSize(): bool

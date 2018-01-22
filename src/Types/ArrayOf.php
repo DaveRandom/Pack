@@ -2,8 +2,8 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
-use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\Method as PackMethod;
+use DaveRandom\Pack\Compilation\Unpack\Method as UnpackMethod;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class ArrayOf implements VectorType
@@ -13,45 +13,45 @@ final class ArrayOf implements VectorType
     private $finite;
     private $size;
 
-    private function generatePackCodeForCurrentArg(PackCompilationContext $ctx)
+    private function generatePackCodeForCurrentArg(PackMethod $method)
     {
-        $this->elementType->generatePackCode($ctx, $this->bounds);
+        $this->elementType->generatePackCode($method, $this->bounds);
     }
 
-    private function generatePackCodeForUnboundedArray(PackCompilationContext $ctx)
+    private function generatePackCodeForUnboundedArray(PackMethod $method)
     {
-        $ctx->beginIterateCurrentArg();
-        $this->generatePackCodeForCurrentArg($ctx);
-        $ctx->endIterateCurrentArg();
+        $method->beginIterateCurrentArg();
+        $this->generatePackCodeForCurrentArg($method);
+        $method->endIterateCurrentArg();
     }
 
-    private function generatePackCodeForBoundedArray(PackCompilationContext $ctx, int $count)
+    private function generatePackCodeForBoundedArray(PackMethod $method, int $count)
     {
         for ($i = 0; $i < $count; $i++) {
-            $ctx->pushArgDimension($i);
-            $this->elementType->generatePackCode($ctx, $this->bounds);
-            $ctx->popArgDimension();
+            $method->pushArgDimension($i);
+            $this->elementType->generatePackCode($method, $this->bounds);
+            $method->popArgDimension();
         }
     }
 
-    private function generateUnpackCodeForCurrentTarget(UnpackCompilationContext $ctx)
+    private function generateUnpackCodeForCurrentTarget(UnpackMethod $method)
     {
-        $this->elementType->generateUnpackCode($ctx, $this->bounds);
+        $this->elementType->generateUnpackCode($method, $this->bounds);
     }
 
-    private function generateUnpackCodeForUnboundedArray(UnpackCompilationContext $ctx)
+    private function generateUnpackCodeForUnboundedArray(UnpackMethod $method)
     {
-        $ctx->beginConsumeRemainingData();
-        $this->generateUnpackCodeForCurrentTarget($ctx);
-        $ctx->endConsumeRemainingData();
+        $method->beginConsumeRemainingData();
+        $this->generateUnpackCodeForCurrentTarget($method);
+        $method->endConsumeRemainingData();
     }
 
-    private function generateUnpackCodeForBoundedArray(UnpackCompilationContext $ctx, int $count)
+    private function generateUnpackCodeForBoundedArray(UnpackMethod $method, int $count)
     {
         for ($i = 0; $i < $count; $i++) {
-            $ctx->pushTargetDimension($i);
-            $this->elementType->generateUnpackCode($ctx, $this->bounds);
-            $ctx->popTargetDimension();
+            $method->pushTargetDimension($i);
+            $this->elementType->generateUnpackCode($method, $this->bounds);
+            $method->popTargetDimension();
         }
     }
 
@@ -73,34 +73,34 @@ final class ArrayOf implements VectorType
             : UNBOUNDED;
     }
 
-    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
+    public function generatePackCode(PackMethod $method, int $count = null)
     {
         if ($count === null) {
-            $this->generatePackCodeForCurrentArg($ctx);
+            $this->generatePackCodeForCurrentArg($method);
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $this->generatePackCodeForUnboundedArray($ctx);
+            $this->generatePackCodeForUnboundedArray($method);
             return;
         }
 
-        $this->generatePackCodeForBoundedArray($ctx, $count);
+        $this->generatePackCodeForBoundedArray($method, $count);
     }
 
-    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
         if ($count === null) {
-            $this->generateUnpackCodeForCurrentTarget($ctx);
+            $this->generateUnpackCodeForCurrentTarget($method);
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $this->generateUnpackCodeForUnboundedArray($ctx);
+            $this->generateUnpackCodeForUnboundedArray($method);
             return;
         }
 
-        $this->generateUnpackCodeForBoundedArray($ctx, $count);
+        $this->generateUnpackCodeForBoundedArray($method, $count);
     }
 
     public function isFixedSize(): bool

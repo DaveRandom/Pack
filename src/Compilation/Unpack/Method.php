@@ -3,11 +3,11 @@
 namespace DaveRandom\Pack\Compilation\Unpack;
 
 use DaveRandom\Pack\Compilation\Block;
-use DaveRandom\Pack\Compilation\CodeElement;
+use DaveRandom\Pack\Compilation\Compilable;
 use DaveRandom\Pack\Compilation\Statement;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class CompilationContext
+final class Method implements Compilable
 {
     const RESULT_VAR_NAME = '$‽r';
     const STRLEN_VAR_NAME = '$‽l';
@@ -19,8 +19,6 @@ final class CompilationContext
     private $currentTargetPath = [];
 
     private $pendingUnpackSpecifiers;
-
-    private $totalSize = 0;
 
     private $currentBlock;
     private $blocks;
@@ -61,7 +59,7 @@ final class CompilationContext
             // unbounded array
             $specifiers[] = "{$specifier}*{$elementKey}";
 
-            $codeElements[] = $block = new InnerBlock("for (\$‽i = 1; isset(\$‽u[\$‽k = \"{$elementKey}{\$‽i}\"]); \$‽i++)");
+            $codeElements[] = $block = new InnerBlock($this->countVarName, "for (\$‽i = 1; isset(\$‽u[\$‽k = \"{$elementKey}{\$‽i}\"]); \$‽i++)");
             $block->appendCodeElements(new Statement("{$target}[] = \$‽u[\$‽k];"));
             $sizeExpr = $size === 1 ? "\$‽i - 1" : "((\$‽i - 1) * {$size})";
             $codeElements[] = new Statement("{$this->countVarName} += {$sizeExpr};");
@@ -74,7 +72,7 @@ final class CompilationContext
         }
 
         $specifierString = \var_export(\implode('/', $specifiers), true);
-        $this->totalSize += $consumed;
+        $this->currentBlock->addSize($consumed);
 
         $this->currentBlock->appendCodeElements(
             $this->generateLengthCheckBlock($consumed, $firstTargetPath),
@@ -115,7 +113,7 @@ final class CompilationContext
         $this->pendingUnpackSpecifiers = new \SplQueue();
         $this->blocks = new \SplStack();
 
-        $this->blocks->push($this->currentBlock = (new RootBlock)->appendCodeElements(
+        $this->blocks->push($this->currentBlock = (new RootBlock($this->countVarName))->appendCodeElements(
             new Statement(self::RESULT_VAR_NAME . " = [];"),
             new Statement(self::STRLEN_VAR_NAME . " = \strlen({$this->dataVarName});")
         ));
@@ -157,7 +155,7 @@ final class CompilationContext
     {
         $target = \implode(" . '/' . ", $targetPath ?? $this->currentTargetPath);
 
-        return (new InnerBlock("if ({$this->offsetVarName} + {$length} > " . self::STRLEN_VAR_NAME . ")"))
+        return (new InnerBlock($this->countVarName, "if ({$this->offsetVarName} + {$length} > " . self::STRLEN_VAR_NAME . ")"))
             ->appendCodeElements(new Statement(
                 "throw new \InvalidArgumentException(\sprintf("
                 . "'Insufficient data input to decode elements from path %s at offset %d: need %d, have %d',"
@@ -166,19 +164,19 @@ final class CompilationContext
             ));
     }
 
-    public function appendResult(string $expr, int $length)
+    public function appendResult(string $expr, int $size)
     {
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
         }
 
         $this->appendCodeElements(
-            $this->generateLengthCheckBlock($length),
+            $this->generateLengthCheckBlock($size),
             new Statement("{$this->getCurrentTarget()} = {$expr};"),
-            new Statement("{$this->offsetVarName} += {$length};")
+            new Statement("{$this->offsetVarName} += {$size};")
         );
 
-        $this->totalSize += $length;
+        $this->currentBlock->addSize($size);
     }
 
     public function appendResultWithCount(string $expr, int $size)
@@ -194,7 +192,7 @@ final class CompilationContext
         );
     }
 
-    public function appendCodeElements(CodeElement ...$elements)
+    public function appendCodeElements(Compilable ...$elements)
     {
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
@@ -205,10 +203,10 @@ final class CompilationContext
 
     public function beginConsumeRemainingData()
     {
-        $counterVarName = '$‽i';
+        $counterVarName = '$‽j';
         $loopHead = \sprintf('for (%1$s = 0; %2$s < %3$s; %1$s++)', $counterVarName, $this->offsetVarName, self::STRLEN_VAR_NAME);
 
-        $this->beginNewBlock(new InnerBlock($loopHead));
+        $this->beginNewBlock(new InnerBlock($this->countVarName, $loopHead));
         $this->currentTargetPath[] = $counterVarName;
     }
 
@@ -228,17 +226,13 @@ final class CompilationContext
         return \array_pop($this->currentTargetPath);
     }
 
-    public function getCodeElements(int $indentation, int $increment): string
+    public function compile(int $indentation, int $increment): string
     {
         while ($this->blocks->count() > 1) {
             $this->endCurrentBlock();
         }
 
-        $this->currentBlock->appendCodeElements(
-            new Statement("{$this->countVarName} += {$this->totalSize};"),
-            new Statement("return " . self::RESULT_VAR_NAME . ";")
-        );
-
-        return $this->currentBlock->getCode($indentation, $increment);
+        return $this->currentBlock->compile($indentation, $increment)
+            . \str_repeat(' ', $indentation) . "return " . self::RESULT_VAR_NAME . ";\n";
     }
 }

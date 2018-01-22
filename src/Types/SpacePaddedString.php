@@ -2,8 +2,8 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
-use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\Method as PackMethod;
+use DaveRandom\Pack\Compilation\Unpack\Method as UnpackMethod;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class SpacePaddedString implements VectorType
@@ -15,42 +15,42 @@ final class SpacePaddedString implements VectorType
         $this->length = $length;
     }
 
-    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
+    public function generatePackCode(PackMethod $method, int $count = null)
     {
-        $arg = $ctx->getCurrentArg();
+        $arg = $method->getCurrentArg();
         $specifier = "A{$this->length}";
 
         if ($count === null) {
-            $ctx->appendPackSpecifier($specifier);
+            $method->appendPackSpecifier($specifier);
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $ctx->appendResult("\implode('', \array_map(function(\$s) { return \pack('{$specifier}', \$s); }, {$arg}))");
+            $method->appendResult("\implode('', \array_map(function(\$s) { return \pack('{$specifier}', \$s); }, {$arg}))");
             return;
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $ctx->appendPackSpecifier($specifier, null, "{$arg}[{$i}]");
+            $method->appendPackSpecifier($specifier, null, "{$arg}[{$i}]");
         }
     }
 
-    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
         $specifier = "A{$this->length}";
 
         if ($count === null) {
-            $ctx->appendUnpackSpecifier($specifier, $this->length, $count);
+            $method->appendUnpackSpecifier($specifier, $this->length, $count);
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $ctx->appendResultWithCount("\array_map(function(\$s) { return \unpack('{$specifier}', \$s); }, \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}), {$this->length}))", $this->length);
+            $method->appendResultWithCount("\array_map(function(\$s) { return \unpack('{$specifier}', \$s)[1]; }, \str_split(\substr({$method->getData()}, {$method->getOffset()}), {$this->length}))", $this->length);
             return;
         }
 
         $length = $this->length * $count;
-        $ctx->appendResult("\array_map(function(\$s) { return \unpack('{$specifier}', \$s); }, \str_split(\substr({$ctx->getData()}, {$ctx->getOffset()}, {$length}), {$this->length}))", $length);
+        $method->appendResult("\array_map(function(\$s) { return \unpack('{$specifier}', \$s)[1]; }, \str_split(\substr({$method->getData()}, {$method->getOffset()}, {$length}), {$this->length}))", $length);
     }
 
     public function isFixedSize(): bool

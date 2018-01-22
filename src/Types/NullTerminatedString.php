@@ -2,46 +2,46 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
-use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\Method as PackMethod;
+use DaveRandom\Pack\Compilation\Unpack\Method as UnpackMethod;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class NullTerminatedString implements Type
 {
-    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
+    public function generatePackCode(PackMethod $method, int $count = null)
     {
         static $packSpecifier = 'Z*';
         static $literalFormat = '"{%s}\x00"';
 
         if ($count === null) {
-            if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier($packSpecifier);
+            if ($method->hasPendingPackSpecifiers()) {
+                $method->appendPackSpecifier($packSpecifier);
             } else {
-                $ctx->appendResult(\sprintf($literalFormat, $ctx->getCurrentArg()));
+                $method->appendResult(\sprintf($literalFormat, $method->getCurrentArg()));
             }
 
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $ctx->beginIterateCurrentArg();
-            $ctx->appendResult(\sprintf($literalFormat, $ctx->getCurrentArg()));
-            $ctx->endIterateCurrentArg();
+            $method->beginIterateCurrentArg();
+            $method->appendResult(\sprintf($literalFormat, $method->getCurrentArg()));
+            $method->endIterateCurrentArg();
             return;
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $arg = "{$ctx->getCurrentArg()}[{$i}]";
+            $arg = "{$method->getCurrentArg()}[{$i}]";
 
-            if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier($packSpecifier, null, $arg);
+            if ($method->hasPendingPackSpecifiers()) {
+                $method->appendPackSpecifier($packSpecifier, null, $arg);
             } else {
-                $ctx->appendResult(\sprintf($literalFormat, $arg));
+                $method->appendResult(\sprintf($literalFormat, $arg));
             }
         }
     }
 
-    public function generateUnpackCode(UnpackCompilationContext $context, int $count = null)
+    public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
         // todo
         throw new \Error("Not implemented yet");

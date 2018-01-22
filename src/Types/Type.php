@@ -2,13 +2,13 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
-use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\Method as PackMethod;
+use DaveRandom\Pack\Compilation\Unpack\Method as UnpackMethod;
 
 interface Type
 {
-    function generatePackCode(PackCompilationContext $context, int $count = null);
-    function generateUnpackCode(UnpackCompilationContext $context, int $count = null);
+    function generatePackCode(PackMethod $method, int $count = null);
+    function generateUnpackCode(UnpackMethod $method, int $count = null);
     function isFixedSize(): bool;
     function getSize(): int;
 }

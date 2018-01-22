@@ -54,10 +54,10 @@ return new class($type) implements \\' . Unpacker::class . '
 
     public function compilePackerMethodBody(VectorType $type, string $argsVarName, int $indentation = 8, int $increment = 4): string
     {
-        $ctx = new Pack\CompilationContext($argsVarName);
-        $type->generatePackCode($ctx, null);
+        $method = new Pack\Method($argsVarName);
+        $type->generatePackCode($method, null);
 
-        return $ctx->getCode($indentation, $increment);
+        return $method->compile($indentation, $increment);
     }
 
     public function compilePacker(VectorType $type): Packer
@@ -71,10 +71,10 @@ return new class($type) implements \\' . Unpacker::class . '
 
     public function compileUnpackerMethodBody(VectorType $type, string $dataVarName, string $offsetVarName, string $countVarName, int $indentation = 8, int $increment = 4): string
     {
-        $ctx = new Unpack\CompilationContext($dataVarName, $offsetVarName, $countVarName);
-        $type->generateUnpackCode($ctx, null);
+        $method = new Unpack\Method($dataVarName, $offsetVarName, $countVarName);
+        $type->generateUnpackCode($method, null);
 
-        return $ctx->getCodeElements($indentation, $increment);
+        return $method->compile($indentation, $increment);
     }
 
     public function compileUnpacker(VectorType $type): Unpacker

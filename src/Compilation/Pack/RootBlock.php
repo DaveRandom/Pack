@@ -13,12 +13,12 @@ final class RootBlock extends Block
         $this->resultVarName = $resultVarName;
     }
 
-    public function getCode(int $indentation, int $increment): string
+    public function compile(int $indentation, int $increment): string
     {
         $firstElement = $this->codeElements[0];
 
         if (\count($this->codeElements) === 1 && $firstElement instanceof AssignmentOperation) {
-            return $firstElement->getCodeAsReturn($indentation, $increment, false);
+            return $firstElement->compileAsReturn($indentation, $increment, false);
         }
 
         $result = '';
@@ -34,18 +34,18 @@ final class RootBlock extends Block
         // loop all elements except the last and generate code for them
         for ($i = 0, $element = $this->codeElements[$i], $l = \count($this->codeElements) - 1; $i < $l; $element = $this->codeElements[++$i]) {
             $result .= $element instanceof AssignmentOperation
-                ? $element->getCodeAsAssignment($indentation, $increment, $assignments++ ? '.=' : '=')
-                : $element->getCode($indentation, $increment);
+                ? $element->compileAsAssignment($indentation, $increment, $assignments++ ? '.=' : '=')
+                : $element->compile($indentation, $increment);
         }
 
         $lastElement = $this->codeElements[$i];
 
         if ($lastElement instanceof AssignmentOperation) {
-            return $result . $lastElement->getCodeAsReturn($indentation, $increment, true);
+            return $result . $lastElement->compileAsReturn($indentation, $increment, true);
         }
 
         // If the last element was not an assignment, explicitly return the result var
-        $result .= $this->codeElements[$i]->getCode($indentation, $increment);
+        $result .= $this->codeElements[$i]->compile($indentation, $increment);
         $result .= "{$padding}return {$this->resultVarName};\n";
 
         return $result;

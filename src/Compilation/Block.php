@@ -2,18 +2,18 @@
 
 namespace DaveRandom\Pack\Compilation;
 
-abstract class Block implements CodeElement
+abstract class Block implements Compilable
 {
     /**
-     * @var CodeElement[]
+     * @var Compilable[]
      */
     protected $codeElements = [];
 
     /**
-     * @param CodeElement[] ...$elements
+     * @param Compilable[] ...$elements
      * @return $this
      */
-    final public function appendCodeElements(CodeElement ...$elements): self
+    final public function appendCodeElements(Compilable ...$elements): self
     {
         foreach ($elements as $element) {
             $this->codeElements[] = $element;

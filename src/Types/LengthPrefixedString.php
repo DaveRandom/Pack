@@ -2,8 +2,8 @@
 
 namespace DaveRandom\Pack\Types;
 
-use DaveRandom\Pack\Compilation\Pack\CompilationContext as PackCompilationContext;
-use DaveRandom\Pack\Compilation\Unpack\CompilationContext as UnpackCompilationContext;
+use DaveRandom\Pack\Compilation\Pack\Method as PackMethod;
+use DaveRandom\Pack\Compilation\Unpack\Method as UnpackMethod;
 use const DaveRandom\Pack\UNBOUNDED;
 
 final class LengthPrefixedString implements VectorType
@@ -15,47 +15,47 @@ final class LengthPrefixedString implements VectorType
         $this->lengthType = $lengthType;
     }
 
-    public function generatePackCode(PackCompilationContext $ctx, int $count = null)
+    public function generatePackCode(PackMethod $method, int $count = null)
     {
         if ($count === null) {
-            $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$ctx->getCurrentArg()})");
+            $this->lengthType->generatePackCodeForExpression($method, "\strlen({$method->getCurrentArg()})");
 
-            if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier('a*');
+            if ($method->hasPendingPackSpecifiers()) {
+                $method->appendPackSpecifier('a*');
             } else {
-                $ctx->appendResult($ctx->getCurrentArg());
+                $method->appendResult($method->getCurrentArg());
             }
 
             return;
         }
 
         if ($count === UNBOUNDED) {
-            $ctx->beginIterateCurrentArg();
-            $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$ctx->getCurrentArg()})");
+            $method->beginIterateCurrentArg();
+            $this->lengthType->generatePackCodeForExpression($method, "\strlen({$method->getCurrentArg()})");
 
-            if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier('a*');
+            if ($method->hasPendingPackSpecifiers()) {
+                $method->appendPackSpecifier('a*');
             } else {
-                $ctx->appendResult($ctx->getCurrentArg());
+                $method->appendResult($method->getCurrentArg());
             }
 
-            $ctx->endIterateCurrentArg();
+            $method->endIterateCurrentArg();
             return;
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $arg = "{$ctx->getCurrentArg()}[{$i}]";
-            $this->lengthType->generatePackCodeForExpression($ctx, "\strlen({$arg})");
+            $arg = "{$method->getCurrentArg()}[{$i}]";
+            $this->lengthType->generatePackCodeForExpression($method, "\strlen({$arg})");
 
-            if ($ctx->hasPendingPackSpecifiers()) {
-                $ctx->appendPackSpecifier('a*', null, $arg);
+            if ($method->hasPendingPackSpecifiers()) {
+                $method->appendPackSpecifier('a*', null, $arg);
             } else {
-                $ctx->appendResult($arg);
+                $method->appendResult($arg);
             }
         }
     }
 
-    public function generateUnpackCode(UnpackCompilationContext $ctx, int $count = null)
+    public function generateUnpackCode(UnpackMethod $method, int $count = null)
     {
         // todo
         throw new \Error("Not implemented yet");

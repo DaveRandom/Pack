@@ -2,9 +2,9 @@
 
 namespace DaveRandom\Pack\Compilation\Pack;
 
-use DaveRandom\Pack\Compilation\CodeElement;
+use DaveRandom\Pack\Compilation\Compilable;
 
-final class AssignmentOperation implements CodeElement
+final class AssignmentOperation implements Compilable
 {
     private $varName;
     private $expressions;
@@ -15,7 +15,7 @@ final class AssignmentOperation implements CodeElement
         $this->expressions = $expressions;
     }
 
-    public function getCode(int $indentation, int $increment, string $target = ''): string
+    public function compile(int $indentation, int $increment, string $target = ''): string
     {
         $padding = \str_repeat(' ', $indentation);
         $continuationPadding = $padding . \str_repeat(' ', $increment);
@@ -23,13 +23,13 @@ final class AssignmentOperation implements CodeElement
         return "{$padding}{$target} " . \implode("\n{$continuationPadding}. ", $this->expressions) . ";\n";
     }
 
-    public function getCodeAsAssignment(int $indentation, int $increment, string $operator): string
+    public function compileAsAssignment(int $indentation, int $increment, string $operator): string
     {
-        return $this->getCode($indentation, $increment, "{$this->varName} {$operator}");
+        return $this->compile($indentation, $increment, "{$this->varName} {$operator}");
     }
 
-    public function getCodeAsReturn(int $indentation, int $increment, bool $withResult): string
+    public function compileAsReturn(int $indentation, int $increment, bool $withResult): string
     {
-        return $this->getCode($indentation, $increment, $withResult ? "return {$this->varName} ." : 'return');
+        return $this->compile($indentation, $increment, $withResult ? "return {$this->varName} ." : 'return');
     }
 }

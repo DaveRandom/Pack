@@ -2,7 +2,7 @@
 
 namespace DaveRandom\Pack\Compilation;
 
-final class Statement implements CodeElement
+final class Statement implements Compilable
 {
     private $statement;
 
@@ -13,7 +13,7 @@ final class Statement implements CodeElement
             : \trim($statement);
     }
 
-    public function getCode(int $indentation, int $increment): string
+    public function compile(int $indentation, int $increment): string
     {
         return \str_repeat(' ', $indentation) . \rtrim($this->statement, ';') . ";\n";
     }

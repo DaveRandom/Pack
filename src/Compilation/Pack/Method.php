@@ -3,10 +3,10 @@
 namespace DaveRandom\Pack\Compilation\Pack;
 
 use DaveRandom\Pack\Compilation\Block;
-use DaveRandom\Pack\Compilation\CodeElement;
+use DaveRandom\Pack\Compilation\Compilable;
 use const DaveRandom\Pack\UNBOUNDED;
 
-final class CompilationContext
+final class Method implements Compilable
 {
     const RESULT_VAR_NAME = '$‽r';
 
@@ -125,7 +125,7 @@ final class CompilationContext
         $this->pendingResultExpressions->push($expr);
     }
 
-    public function appendCodeElements(CodeElement ...$elements)
+    public function appendCodeElements(Compilable ...$elements)
     {
         $this->compilePendingResultExpressions();
 
@@ -204,7 +204,7 @@ final class CompilationContext
         return \array_pop($this->currentArgPath);
     }
 
-    public function getCode(int $indentation, int $increment = 4)
+    public function compile(int $indentation, int $increment): string
     {
         while ($this->blocks->count() > 1) {
             $this->endCurrentBlock();
@@ -212,6 +212,6 @@ final class CompilationContext
 
         $this->compilePendingResultExpressions();
 
-        return $this->blocks->bottom()->getCode($indentation, $increment, '=');
+        return $this->blocks->bottom()->compile($indentation, $increment, '=');
     }
 }

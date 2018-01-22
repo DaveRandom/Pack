@@ -2,16 +2,14 @@
 
 namespace DaveRandom\Pack\Compilation\Unpack;
 
-use DaveRandom\Pack\Compilation\Block;
-
 final class RootBlock extends Block
 {
-    public function getCode(int $indentation, int $increment): string
+    public function compile(int $indentation, int $increment): string
     {
-        $result = '';
+        $result = parent::compile($indentation, $increment);
 
         foreach ($this->codeElements as $element) {
-            $result .= $element->getCode($indentation, $increment);
+            $result .= $element->compile($indentation, $increment);
         }
 
         return $result;

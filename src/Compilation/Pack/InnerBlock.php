@@ -15,7 +15,7 @@ final class InnerBlock extends Block
         $this->trailer = \trim($trailer);
     }
 
-    public function getCode(int $indentation, int $increment): string
+    public function compile(int $indentation, int $increment): string
     {
         $padding = \str_repeat(' ', $indentation);
         $indentation += $increment;
@@ -24,8 +24,8 @@ final class InnerBlock extends Block
 
         foreach ($this->codeElements as $element) {
             $result .= $element instanceof AssignmentOperation
-                ? $element->getCodeAsAssignment($indentation, $increment, '.=')
-                : $element->getCode($indentation, $increment);
+                ? $element->compileAsAssignment($indentation, $increment, '.=')
+                : $element->compile($indentation, $increment);
         }
 
         return $result . $padding . \rtrim("} {$this->trailer}") . "\n";
