@@ -85,6 +85,7 @@ final class CompilationContext
 
     private function beginNewBlock(Block $block)
     {
+        var_dump('beginNewBlock', $this->blocks->count());
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
         }
@@ -95,13 +96,14 @@ final class CompilationContext
 
     private function endCurrentBlock()
     {
+        var_dump('endCurrentBlock', $this->blocks->count());
         if ($this->hasPendingUnpackSpecifiers()) {
             $this->compilePendingUnpackSpecifiers();
         }
 
         $innerBlock = $this->blocks->pop();
         $this->currentBlock = $this->blocks->top();
-        $this->currentBlock->appendElement($innerBlock);
+        $this->currentBlock->appendCodeElements($innerBlock);
     }
 
     public function __construct(string $dataVarName, string $offsetVarName, string $countVarName)
@@ -113,10 +115,10 @@ final class CompilationContext
         $this->pendingUnpackSpecifiers = new \SplQueue();
         $this->blocks = new \SplStack();
 
-        $this->currentBlock = (new RootBlock)->appendCodeElements(
+        $this->blocks->push($this->currentBlock = (new RootBlock)->appendCodeElements(
             new Statement(self::RESULT_VAR_NAME . " = [];"),
             new Statement(self::STRLEN_VAR_NAME . " = \strlen({$this->dataVarName});")
-        );
+        ));
     }
 
     public function hasPendingUnpackSpecifiers(): bool
@@ -153,9 +155,7 @@ final class CompilationContext
 
     private function generateLengthCheckBlock(int $length, array $targetPath = null): Block
     {
-        $target = \var_export("'" . \implode('/', \array_map(function($level) {
-            return eval("return (string){$level};");
-        }, $targetPath ?? $this->currentTargetPath)) . "'", true);
+        $target = \implode(" . '/' . ", $targetPath ?? $this->currentTargetPath);
 
         return (new InnerBlock("if ({$this->offsetVarName} + {$length} > " . self::STRLEN_VAR_NAME . ")"))
             ->appendCodeElements(new Statement(
@@ -205,12 +205,17 @@ final class CompilationContext
 
     public function beginConsumeRemainingData()
     {
-        // todo
+        $counterVarName = '$‽i';
+        $loopHead = \sprintf('for (%1$s = 0; %2$s < %3$s; %1$s++)', $counterVarName, $this->offsetVarName, self::STRLEN_VAR_NAME);
+
+        $this->beginNewBlock(new InnerBlock($loopHead));
+        $this->currentTargetPath[] = $counterVarName;
     }
 
     public function endConsumeRemainingData()
     {
-        // todo
+        $this->endCurrentBlock();
+        \array_pop($this->currentTargetPath);
     }
 
     public function pushTargetDimension($key)
