@@ -231,10 +231,10 @@ final class Method implements Compilable
         }
     }
 
-    public function beginIterateCounter(int $iterations, bool $pushTargetDimension)
+    public function beginIterateCounter($iterationsExpr, bool $pushTargetDimension)
     {
         $counterVarName = $this->getCounterVar($pushTargetDimension);
-        $loopHead = \sprintf('for (%1$s = 0; %1$s < %2$d; %1$s++)', $counterVarName, $iterations);
+        $loopHead = \sprintf('for (%1$s = 0; %1$s < (%2$s); %1$s++)', $counterVarName, $iterationsExpr);
 
         $this->beginNewBlock(new InnerBlock($this->countVarName, $loopHead));
     }

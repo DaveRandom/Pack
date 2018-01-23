@@ -6,6 +6,7 @@ use DaveRandom\Pack\Compilation\Compiler;
 use DaveRandom\Pack\Types\ArrayOf;
 use DaveRandom\Pack\Types\Int16;
 use DaveRandom\Pack\Types\Int32;
+use DaveRandom\Pack\Types\LengthPrefixedArrayOf;
 use DaveRandom\Pack\Types\NullTerminatedString;
 use DaveRandom\Pack\Types\Struct;
 use DaveRandom\Pack\Types\UInt32;
@@ -20,8 +21,8 @@ $struct = new ArrayOf(new Struct([
         'one' => new UInt32(),
         'two' => new ArrayOf(new Int16(), 8),
     ]),
-    'str' => new ArrayOf(new NullTerminatedString())
-]), 1);
+    'str' => new LengthPrefixedArrayOf(new NullTerminatedString(), new UInt8())
+]));
 
 $data = [
     [
